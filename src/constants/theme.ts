@@ -11,6 +11,10 @@ export const colors = {
   onPrimary: "#FFFFFF",
   amberSoft: "#F5E3B5",
   amberInk: "#6B4A12",
+  amber: "#E0A93B",
+  greySoft: "#E6E6E0",
+  scanner: "#11161C",
+  danger: "#B3261E",
 };
 
 export const coverColors = {
