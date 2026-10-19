@@ -1,8 +1,9 @@
 import { createContext, useContext, useReducer, useState, type ReactNode } from "react";
 
 import { sampleLibrary } from "@/data/sample-library";
+import { lookupDescription } from "@/lib/book-lookup";
 import { libraryReducer } from "@/lib/library";
-import type { BookDetails, BookSource, BookStatus, OwnedBook } from "@/types/book";
+import type { BookDetails, BookInfo, BookSource, BookStatus, OwnedBook } from "@/types/book";
 
 // The signed-in user's library, held in memory for now.
 // TODO: back this with `library_books` via TanStack Query once auth is in place.
@@ -15,7 +16,8 @@ type LibraryContextValue = {
   allFriendsOnly: boolean;
   setAllFriendsOnly: (value: boolean) => void;
   findByIsbn: (isbn: string) => OwnedBook | undefined;
-  addBook: (details: BookDetails, source: BookSource) => AddResult;
+  // `info` comes from the ISBN lookup when the book was scanned.
+  addBook: (details: BookDetails, source: BookSource, info?: BookInfo | null) => AddResult;
   updateBook: (id: string, changes: Partial<BookDetails>) => void;
   setStatus: (id: string, status: Exclude<BookStatus, "lent">) => void;
   removeBook: (id: string) => void;
@@ -41,7 +43,7 @@ export function LibraryProvider({ children, initialBooks = sampleLibrary, initia
     allFriendsOnly,
     setAllFriendsOnly,
     findByIsbn,
-    addBook: (details, source) => {
+    addBook: (details, source, info = null) => {
       const existing = details.isbn ? findByIsbn(details.isbn) : undefined;
       if (existing) return { ok: false, reason: "duplicate", existing };
       const book: OwnedBook = {
@@ -51,8 +53,16 @@ export function LibraryProvider({ children, initialBooks = sampleLibrary, initia
         source,
         addedAt: new Date().toISOString(),
         lentTo: null,
+        info,
       };
       dispatch({ type: "add", book });
+      // Open Library needs two more requests for the description; fetch it after saving so
+      // batch scanning isn't slowed down.
+      if (info && !info.description && details.isbn) {
+        void lookupDescription(details.isbn).then((description) => {
+          if (description) dispatch({ type: "setInfo", id: book.id, info: { ...info, description } });
+        });
+      }
       return { ok: true, book };
     },
     updateBook: (id, changes) => dispatch({ type: "update", id, changes }),

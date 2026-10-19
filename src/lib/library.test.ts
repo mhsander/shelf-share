@@ -15,6 +15,7 @@ function book(overrides: Partial<OwnedBook>): OwnedBook {
     addedAt: "2026-10-16T12:00:00.000Z",
     lentTo: null,
     visibility: "everyone",
+    info: null,
     ...overrides,
   };
 }
@@ -63,6 +64,20 @@ describe("libraryReducer", () => {
   it("does not remove a lent book", () => {
     const start = { books: [book({ status: "lent", lentTo: { name: "Arturo", dueDate: "2026-11-06" } })] };
     expect(libraryReducer(start, { type: "remove", id: "1" })).toBe(start);
+  });
+});
+
+describe("libraryReducer setInfo", () => {
+  const info = { description: "A house.", publisher: null, publishedYear: 2020, pageCount: 245, subjects: [] };
+
+  it("saves lookup details on a book", () => {
+    const state = libraryReducer({ books: [book({ id: "a" })] }, { type: "setInfo", id: "a", info });
+    expect(state.books[0].info).toEqual(info);
+  });
+
+  it("ignores an unknown book, such as one removed before the lookup finished", () => {
+    const start = { books: [book({ id: "a" })] };
+    expect(libraryReducer(start, { type: "setInfo", id: "gone", info })).toBe(start);
   });
 });
 

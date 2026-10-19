@@ -68,6 +68,26 @@ describe("BookDetailScreen", () => {
   });
 });
 
+describe("BookDetailScreen about this book", () => {
+  it("shows publication details and the description from the scan", async () => {
+    const book = sampleBooks.find((b) => b.id === "2")!;
+    showBook(book.id);
+    await renderDetail();
+
+    expect(screen.getByText("ABOUT THIS BOOK")).toBeOnTheScreen();
+    expect(screen.getByText("Bloomsbury Publishing · 2020 · 245 pages")).toBeOnTheScreen();
+    expect(screen.getByText(book.info!.description!)).toBeOnTheScreen();
+    expect(screen.getByText("Labyrinths")).toBeOnTheScreen();
+  });
+
+  it("leaves the section out for a book without lookup details", async () => {
+    showBook("4");
+    await renderDetail();
+
+    expect(screen.queryByText("ABOUT THIS BOOK")).not.toBeOnTheScreen();
+  });
+});
+
 describe("BookDetailScreen friends", () => {
   it("marks a friend's friends-only book", async () => {
     showBook("5");

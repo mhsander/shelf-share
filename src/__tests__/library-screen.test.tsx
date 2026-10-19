@@ -16,6 +16,7 @@ const base = {
   addedAt: "2026-10-01T12:00:00.000Z",
   lentTo: null,
   visibility: "everyone",
+  info: null,
 } as const;
 
 const books: OwnedBook[] = [

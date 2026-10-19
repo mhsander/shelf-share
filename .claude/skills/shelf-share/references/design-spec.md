@@ -78,6 +78,11 @@ One row is one physical copy owned by one user.
 | author | text, not null | [Stated] |
 | isbn | text, nullable | [Stated] Normalized ISBN-13 with digits only; null for manual entries without one |
 | cover_url | text, nullable | From the metadata lookup |
+| description | text, nullable | From the lookup (Google Books, or the Open Library work record, fetched after saving); plain text, up to 2,000 characters |
+| publisher | text, nullable | From the lookup |
+| published_year | smallint, nullable | From the lookup |
+| page_count | integer, nullable | From the lookup |
+| subjects | text[], default `{}` | Up to 4, from the lookup; Open Library machine tags such as `genre:fantasy` are dropped |
 | personal_rating | smallint, nullable | [Stated] 1–5 |
 | personal_review | text, nullable | [Stated] Up to 5,000 characters |
 | status | enum `book_status` | `available`, `lent`, `hidden`; default `available` |
@@ -154,6 +159,7 @@ Columns: `user_id`, `expo_push_token` (unique), `platform`, `updated_at`.
 ### 6.2 Adding books by scan or by hand
 - **Scan.** Read an EAN-13 barcode and accept only codes starting with 978 or 979 (books). Look up the ISBN in Open Library first and fall back to Google Books. Show the title, author, and cover pre-filled so the user can confirm or edit before saving. If neither service finds the book, open the manual form with the ISBN filled in.
 - **Manual.** Title and author are required; ISBN, rating, and review are optional. Validate ISBN-10 and ISBN-13 checksums and convert ISBN-10 to ISBN-13.
+- Save the lookup's publication details (description, publisher, year, pages, subjects) with the book. Book detail shows them under "About this book". Open Library keeps descriptions on the work record, so that needs two more requests, made after the book is saved so batch scanning stays fast.
 - Run the metadata lookups on the device. No API key is needed for basic Open Library or Google Books ISBN lookups (verify rate limits before launch).
 
 ### 6.3 Importing from Goodreads
@@ -262,7 +268,7 @@ From memory, not yet checked:
 - How native Google and Apple sign-in pass tokens to Supabase (`signInWithIdToken`).
 - Meta's app review requirements for Facebook Login.
 - The column names and ISBN formatting in the Goodreads CSV export.
-- Rate limits on the Open Library and Google Books APIs.
+- Rate limits on the Open Library and Google Books APIs. Observed 2026-10-19: a keyless Google Books request returned HTTP 429 "Queries per day" quota exceeded, so the keyless fallback can't be relied on; plan for an API key (restricted to the app) or Open Library only. Open Library asks clients to send a User-Agent identifying the app.
 
 ## 13. Open questions (defaults in place; implementation can proceed)
 1. Which community launches first? This affects how city and neighborhood are entered (free text now; a fixed list may be better).

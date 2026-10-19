@@ -1,7 +1,7 @@
 import { filterBooks, fromFriends, visibleTo } from "@/lib/filter-books";
 import type { ListedBook } from "@/types/book";
 
-const note = { ownerBookCount: 1, personalRating: null, personalReview: null };
+const note = { ownerBookCount: 1, personalRating: null, personalReview: null, info: null };
 const books: ListedBook[] = [
   { id: "1", title: "The Overstory", author: "Richard Powers", ownerId: "ana", ownerName: "Ana", neighborhood: "Ballard", coverColor: "green", visibility: "everyone", ...note },
   { id: "2", title: "Piranesi", author: "Susanna Clarke", ownerId: "arturo", ownerName: "Arturo", neighborhood: "Fremont", coverColor: "blue", visibility: "friends", ...note },

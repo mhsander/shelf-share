@@ -1,10 +1,11 @@
 import { act, fireEvent, render, screen } from "@testing-library/react-native";
+import { Text } from "react-native";
 import { useCameraPermissions } from "expo-camera";
 import { router } from "expo-router";
 
 import ScanScreen from "@/app/scan";
-import { LibraryProvider } from "@/hooks/use-library";
-import { lookupIsbn } from "@/lib/book-lookup";
+import { LibraryProvider, useLibrary } from "@/hooks/use-library";
+import { lookupDescription, lookupIsbn } from "@/lib/book-lookup";
 import type { OwnedBook } from "@/types/book";
 
 jest.mock("expo-router", () => ({
@@ -22,12 +23,14 @@ jest.mock("expo-camera", () => ({
   useCameraPermissions: jest.fn(),
 }));
 
-jest.mock("@/lib/book-lookup", () => ({ lookupIsbn: jest.fn() }));
+jest.mock("@/lib/book-lookup", () => ({ lookupIsbn: jest.fn(), lookupDescription: jest.fn() }));
 
 const mockPermissions = useCameraPermissions as jest.Mock;
 const mockLookup = lookupIsbn as jest.Mock;
+const mockDescription = lookupDescription as jest.Mock;
 
-const piranesi = { title: "Piranesi", author: "Susanna Clarke", coverUrl: null };
+const info = { description: null, publisher: "Bloomsbury Publishing", publishedYear: 2020, pageCount: 245, subjects: ["Fiction"] };
+const piranesi = { title: "Piranesi", author: "Susanna Clarke", coverUrl: null, info };
 
 const owned: OwnedBook = {
   id: "owned-1",
@@ -40,12 +43,20 @@ const owned: OwnedBook = {
   addedAt: "2026-10-01T12:00:00.000Z",
   lentTo: null,
   visibility: "everyone",
+  info: null,
 };
+
+// Prints saved lookup details so tests can see what was stored.
+function InfoProbe() {
+  const { books } = useLibrary();
+  return books.map((b) => <Text key={b.id}>{`info:${b.info?.publisher}|${b.info?.description}`}</Text>);
+}
 
 async function renderScanner(initialBooks: OwnedBook[] = []) {
   await render(
     <LibraryProvider initialBooks={initialBooks}>
       <ScanScreen />
+      <InfoProbe />
     </LibraryProvider>,
   );
 }
@@ -59,6 +70,7 @@ async function scan(data: string, type = "ean13") {
 beforeEach(() => {
   jest.clearAllMocks();
   mockOnScan = undefined;
+  mockDescription.mockResolvedValue(null);
   mockPermissions.mockReturnValue([{ granted: true, canAskAgain: true }, jest.fn()]);
 });
 
@@ -76,6 +88,31 @@ describe("ScanScreen", () => {
 
     expect(screen.getByText("Added this session: 1")).toBeOnTheScreen();
     expect(screen.queryByText("Piranesi")).not.toBeOnTheScreen();
+  });
+
+  it("saves the lookup details and fetches the description after adding", async () => {
+    mockLookup.mockResolvedValue({ status: "found", book: piranesi });
+    mockDescription.mockResolvedValue("A house of endless halls.");
+    await renderScanner();
+
+    await scan("9781635575637");
+    await fireEvent.press(screen.getByRole("button", { name: "Add & scan next" }));
+
+    expect(mockDescription).toHaveBeenCalledWith("9781635575637");
+    expect(await screen.findByText("info:Bloomsbury Publishing|A house of endless halls.")).toBeOnTheScreen();
+  });
+
+  it("passes the lookup details to the form when editing before adding", async () => {
+    mockLookup.mockResolvedValue({ status: "found", book: piranesi });
+    await renderScanner();
+
+    await scan("9781635575637");
+    await fireEvent.press(screen.getByRole("button", { name: "Edit details, rating or review" }));
+
+    expect(router.push).toHaveBeenCalledWith({
+      pathname: "/add-book",
+      params: expect.objectContaining({ info: JSON.stringify(info), source: "scan" }),
+    });
   });
 
   it("skips a found book without adding it", async () => {
@@ -107,14 +144,15 @@ describe("ScanScreen", () => {
   });
 
   it("opens the manual form with the ISBN when no service knows the book", async () => {
-    mockLookup.mockResolvedValue({ status: "not_found", prefill: { title: "Piranesi", author: "", coverUrl: null } });
+    const emptyInfo = { description: null, publisher: null, publishedYear: null, pageCount: null, subjects: [] };
+    mockLookup.mockResolvedValue({ status: "not_found", prefill: { title: "Piranesi", author: "", coverUrl: null, info: emptyInfo } });
     await renderScanner();
 
     await scan("9781635575637");
 
     expect(router.push).toHaveBeenCalledWith({
       pathname: "/add-book",
-      params: { isbn: "9781635575637", title: "Piranesi", author: "", coverUrl: "", source: "scan" },
+      params: { isbn: "9781635575637", title: "Piranesi", author: "", coverUrl: "", info: JSON.stringify(emptyInfo), source: "scan" },
     });
   });
 

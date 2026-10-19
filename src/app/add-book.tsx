@@ -11,7 +11,7 @@ import { StarRating } from "@/components/star-rating";
 import { colors } from "@/constants/theme";
 import { useLibrary } from "@/hooks/use-library";
 import { normalizeIsbn } from "@/lib/isbn";
-import type { BookDetails, BookSource, BookVisibility } from "@/types/book";
+import type { BookDetails, BookInfo, BookSource, BookVisibility } from "@/types/book";
 
 // Add a book by hand, confirm a scanned one (prefilled from params), or edit one (`id` param).
 type Params = {
@@ -20,8 +20,19 @@ type Params = {
   title?: string;
   author?: string;
   coverUrl?: string;
+  // JSON-encoded BookInfo from a scan's lookup.
+  info?: string;
   source?: BookSource;
 };
+
+function parseInfo(raw: string | undefined): BookInfo | null {
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as BookInfo;
+  } catch {
+    return null;
+  }
+}
 
 type Errors = Partial<Record<"title" | "author" | "isbn" | "review", string>>;
 
@@ -72,7 +83,7 @@ export default function AddBookScreen() {
     };
 
     if (editing) updateBook(editing.id, details);
-    else addBook(details, params.source ?? "manual");
+    else addBook(details, params.source ?? "manual", parseInfo(params.info));
     router.back();
   }
 

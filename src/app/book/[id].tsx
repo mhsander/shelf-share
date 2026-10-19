@@ -6,6 +6,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Avatar } from "@/components/avatar";
 import { BookCover } from "@/components/book-cover";
+import { BookInfoSection } from "@/components/book-info";
 import { StarRating } from "@/components/star-rating";
 import { StatusPill } from "@/components/status-pill";
 import { colors } from "@/constants/theme";
@@ -86,6 +87,8 @@ export default function BookDetailScreen() {
               {book.personalReview !== null && <Text style={styles.review}>{book.personalReview}</Text>}
             </View>
           )}
+
+          <BookInfoSection info={book.info} />
         </ScrollView>
 
         <View style={styles.sheet}>

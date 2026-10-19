@@ -15,6 +15,7 @@ export const sampleLibrary: OwnedBook[] = [
     addedAt: "2026-09-02T18:00:00.000Z",
     lentTo: { name: "Arturo", dueDate: "2026-11-06" },
     visibility: "everyone",
+    info: null,
   },
   {
     id: "sample-2",
@@ -29,6 +30,7 @@ export const sampleLibrary: OwnedBook[] = [
     addedAt: "2026-09-01T18:00:00.000Z",
     lentTo: null,
     visibility: "friends",
+    info: null,
   },
   {
     id: "sample-3",
@@ -43,5 +45,6 @@ export const sampleLibrary: OwnedBook[] = [
     addedAt: "2026-08-30T18:00:00.000Z",
     lentTo: null,
     visibility: "everyone",
+    info: null,
   },
 ];

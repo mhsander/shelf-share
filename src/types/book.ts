@@ -1,5 +1,15 @@
 import type { CoverColor } from "@/constants/theme";
 
+// Publication details from the ISBN lookup, saved when a book is scanned. Every field is optional
+// because Open Library and Google Books records are often incomplete.
+export type BookInfo = {
+  description: string | null;
+  publisher: string | null;
+  publishedYear: number | null;
+  pageCount: number | null;
+  subjects: string[];
+};
+
 // Mirrors the `book_visibility` enum in Postgres.
 export type BookVisibility = "everyone" | "friends";
 
@@ -19,6 +29,7 @@ export type ListedBook = {
   // The owner's note, shown on the book detail screen.
   personalRating: number | null;
   personalReview: string | null;
+  info: BookInfo | null;
 };
 
 // Mirrors the `book_status` and `book_source` enums in Postgres.
@@ -41,6 +52,8 @@ export type OwnedBook = {
   lentTo: { name: string; dueDate: string } | null;
   // Overridden to friends-only when the owner makes their whole library friends-only.
   visibility: BookVisibility;
+  // Null for books typed in by hand or saved before the lookup returned.
+  info: BookInfo | null;
 };
 
 // The fields a user can type or edit in the add/edit form.
