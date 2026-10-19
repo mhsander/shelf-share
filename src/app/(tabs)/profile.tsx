@@ -1,7 +1,14 @@
 import { router } from "expo-router";
 import { openBrowserAsync } from "expo-web-browser";
 import { Children, type ReactNode } from "react";
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  Alert,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Avatar } from "@/components/avatar";
@@ -58,7 +65,9 @@ export default function ProfileScreen() {
   const { profile, blocked } = useProfile();
   const { books } = useLibrary();
   const counts = libraryCounts(books);
-  const location = [profile.neighborhood, profile.city].filter(Boolean).join(" · ");
+  const location = [profile.neighborhood, profile.city]
+    .filter(Boolean)
+    .join(" · ");
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top"]}>
@@ -67,19 +76,27 @@ export default function ProfileScreen() {
 
         <View style={styles.card}>
           <View style={styles.identity}>
-            <Avatar name={profile.displayName} uri={profile.avatarUrl} size={72} />
+            <Avatar
+              name={profile.displayName}
+              uri={profile.avatarUrl}
+              size={72}
+            />
             <View style={styles.identityText}>
               <Text style={styles.name}>{profile.displayName}</Text>
               <Text style={styles.location}>{location}</Text>
             </View>
           </View>
           <Text style={styles.counts}>
-            {counts.total} {counts.total === 1 ? "book" : "books"} · {counts.available} available · {counts.lent} lent
+            {counts.total} {counts.total === 1 ? "book" : "books"} ·{" "}
+            {counts.available} available · {counts.lent} lent
           </Text>
           <Pressable
             accessibilityRole="button"
             onPress={() => router.push("/edit-profile")}
-            style={({ pressed }) => [styles.outlineButton, pressed && styles.pressed]}
+            style={({ pressed }) => [
+              styles.outlineButton,
+              pressed && styles.pressed,
+            ]}
           >
             <Text style={styles.outlineLabel}>Edit profile</Text>
           </Pressable>
@@ -92,13 +109,25 @@ export default function ProfileScreen() {
             detail={blocked.length > 0 ? String(blocked.length) : undefined}
             onPress={() => router.push("/blocked-users")}
           />
-          <SettingsRow label="Privacy policy" icon="shield-checkmark-outline" onPress={() => openLink(links.privacy)} />
-          <SettingsRow label="Terms" icon="document-text-outline" onPress={() => openLink(links.terms)} />
+          <SettingsRow
+            label="Privacy policy"
+            icon="shield-checkmark-outline"
+            onPress={() => openLink(links.privacy)}
+          />
         </SettingsGroup>
 
         <SettingsGroup>
-          <SettingsRow label="Sign out" icon="log-out-outline" onPress={confirmSignOut} />
-          <SettingsRow label="Delete account" icon="trash-outline" danger onPress={confirmDeleteAccount} />
+          <SettingsRow
+            label="Sign out"
+            icon="log-out-outline"
+            onPress={confirmSignOut}
+          />
+          <SettingsRow
+            label="Delete account"
+            icon="trash-outline"
+            danger
+            onPress={confirmDeleteAccount}
+          />
         </SettingsGroup>
       </ScrollView>
     </SafeAreaView>
