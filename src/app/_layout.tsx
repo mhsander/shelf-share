@@ -13,6 +13,7 @@ export default function RootLayout() {
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="scan" options={{ presentation: "fullScreenModal", animation: "slide_from_bottom" }} />
           <Stack.Screen name="add-book" options={{ presentation: "modal" }} />
+          <Stack.Screen name="edit-profile" options={{ presentation: "modal" }} />
         </Stack>
       </ProfileProvider>
     </LibraryProvider>
