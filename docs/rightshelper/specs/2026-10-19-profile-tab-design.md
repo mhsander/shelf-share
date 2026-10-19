@@ -65,7 +65,7 @@ Out (later passes):
 
 **Edit profile** (`src/app/edit-profile.tsx`, modal presentation)
 - Fields: Display name, City, Neighborhood (optional), using `FormField`.
-- Errors appear after the user edits a field or taps Save. Save is disabled while invalid.
+- A field's error appears once the user has edited that field. Save is disabled while the form is invalid.
 - Save calls `updateProfile` and `router.back()`; Cancel calls `router.back()` without saving.
 
 **Blocked users** (`src/app/blocked-users.tsx`, pushed card)
