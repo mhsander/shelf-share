@@ -13,7 +13,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Avatar } from "@/components/avatar";
 import { SettingsRow } from "@/components/settings-row";
-import { links } from "@/constants/links";
 import { colors } from "@/constants/theme";
 import { useLibrary } from "@/hooks/use-library";
 import { useProfile } from "@/hooks/use-profile";
@@ -109,11 +108,6 @@ export default function ProfileScreen() {
             detail={blocked.length > 0 ? String(blocked.length) : undefined}
             onPress={() => router.push("/blocked-users")}
           />
-          <SettingsRow
-            label="Privacy policy"
-            icon="shield-checkmark-outline"
-            onPress={() => openLink(links.privacy)}
-          />
         </SettingsGroup>
 
         <SettingsGroup>
@@ -129,6 +123,11 @@ export default function ProfileScreen() {
             onPress={confirmDeleteAccount}
           />
         </SettingsGroup>
+        <p>
+          We value your trust. We do not sell, rent, trade, or share your
+          personal information with any third parties for marketing,
+          advertising, or commercial purposes.
+        </p>
       </ScrollView>
     </SafeAreaView>
   );

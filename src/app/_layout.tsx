@@ -15,6 +15,7 @@ export default function RootLayout() {
           <Stack.Screen name="add-book" options={{ presentation: "modal" }} />
           <Stack.Screen name="edit-profile" options={{ presentation: "modal" }} />
           <Stack.Screen name="blocked-users" />
+          <Stack.Screen name="book/[id]" />
         </Stack>
       </ProfileProvider>
     </LibraryProvider>

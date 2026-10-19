@@ -7,7 +7,12 @@ export type ListedBook = {
   author: string;
   ownerName: string;
   neighborhood: string;
+  // How many of the owner's books are available to lend.
+  ownerBookCount: number;
   coverColor: CoverColor;
+  // The owner's note, shown on the book detail screen.
+  personalRating: number | null;
+  personalReview: string | null;
 };
 
 // Mirrors the `book_status` and `book_source` enums in Postgres.

@@ -1,9 +1,10 @@
 import { filterBooks } from "@/lib/filter-books";
 import type { ListedBook } from "@/types/book";
 
+const note = { ownerBookCount: 1, personalRating: null, personalReview: null };
 const books: ListedBook[] = [
-  { id: "1", title: "The Overstory", author: "Richard Powers", ownerName: "Ana", neighborhood: "Ballard", coverColor: "green" },
-  { id: "2", title: "Piranesi", author: "Susanna Clarke", ownerName: "Ben", neighborhood: "Fremont", coverColor: "blue" },
+  { id: "1", title: "The Overstory", author: "Richard Powers", ownerName: "Ana", neighborhood: "Ballard", coverColor: "green", ...note },
+  { id: "2", title: "Piranesi", author: "Susanna Clarke", ownerName: "Ben", neighborhood: "Fremont", coverColor: "blue", ...note },
 ];
 
 describe("filterBooks", () => {
