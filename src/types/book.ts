@@ -1,15 +1,21 @@
 import type { CoverColor } from "@/constants/theme";
 
+// Mirrors the `book_visibility` enum in Postgres.
+export type BookVisibility = "everyone" | "friends";
+
 // A book another user has listed as available, as shown in search results.
 export type ListedBook = {
   id: string;
   title: string;
   author: string;
+  ownerId: string;
   ownerName: string;
   neighborhood: string;
   // How many of the owner's books are available to lend.
   ownerBookCount: number;
   coverColor: CoverColor;
+  // Already resolved against the owner's library-wide setting.
+  visibility: BookVisibility;
   // The owner's note, shown on the book detail screen.
   personalRating: number | null;
   personalReview: string | null;
@@ -33,7 +39,9 @@ export type OwnedBook = {
   addedAt: string;
   // From the book's `lent` borrow request; null unless status is `lent`.
   lentTo: { name: string; dueDate: string } | null;
+  // Overridden to friends-only when the owner makes their whole library friends-only.
+  visibility: BookVisibility;
 };
 
 // The fields a user can type or edit in the add/edit form.
-export type BookDetails = Pick<OwnedBook, "title" | "author" | "isbn" | "coverUrl" | "personalRating" | "personalReview">;
+export type BookDetails = Pick<OwnedBook, "title" | "author" | "isbn" | "coverUrl" | "personalRating" | "personalReview" | "visibility">;

@@ -14,6 +14,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Avatar } from "@/components/avatar";
 import { SettingsRow } from "@/components/settings-row";
 import { colors } from "@/constants/theme";
+import { useFriends } from "@/hooks/use-friends";
 import { useLibrary } from "@/hooks/use-library";
 import { useProfile } from "@/hooks/use-profile";
 import { libraryCounts } from "@/lib/profile";
@@ -63,6 +64,7 @@ function SettingsGroup({ children }: { children: ReactNode }) {
 export default function ProfileScreen() {
   const { profile, blocked } = useProfile();
   const { books } = useLibrary();
+  const { friends, incoming } = useFriends();
   const counts = libraryCounts(books);
   const location = [profile.neighborhood, profile.city]
     .filter(Boolean)
@@ -102,6 +104,12 @@ export default function ProfileScreen() {
         </View>
 
         <SettingsGroup>
+          <SettingsRow
+            label="Friends"
+            icon="people-outline"
+            detail={incoming.length > 0 ? `${incoming.length} new` : String(friends.length)}
+            onPress={() => router.push("/friends")}
+          />
           <SettingsRow
             label="Blocked users"
             icon="ban-outline"

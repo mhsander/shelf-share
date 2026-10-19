@@ -73,7 +73,7 @@ export default function ScanScreen() {
   }
 
   function addFound(isbn: string, book: BookMetadata) {
-    addBook({ ...book, isbn, personalRating: null, personalReview: null }, "scan");
+    addBook({ ...book, isbn, personalRating: null, personalReview: null, visibility: "everyone" }, "scan");
     closeSheet(isbn);
   }
 

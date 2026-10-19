@@ -4,6 +4,16 @@ import { router, useLocalSearchParams } from "expo-router";
 import BookDetailScreen from "@/app/book/[id]";
 import { BookCard } from "@/components/book-card";
 import { sampleBooks } from "@/data/sample-books";
+import { sampleFriends } from "@/data/sample-people";
+import { FriendsProvider } from "@/hooks/use-friends";
+
+async function renderDetail() {
+  await render(
+    <FriendsProvider initialState={sampleFriends}>
+      <BookDetailScreen />
+    </FriendsProvider>,
+  );
+}
 
 jest.mock("expo-router", () => ({
   router: { back: jest.fn(), push: jest.fn() },
@@ -20,7 +30,7 @@ describe("BookDetailScreen", () => {
   it("shows the book, its owner, and the owner's note", async () => {
     const book = sampleBooks[0];
     showBook(book.id);
-    await render(<BookDetailScreen />);
+    await renderDetail();
 
     expect(screen.getByText(book.title)).toBeOnTheScreen();
     expect(screen.getByText(book.author)).toBeOnTheScreen();
@@ -36,25 +46,51 @@ describe("BookDetailScreen", () => {
   it("hides the owner's note when there isn't one", async () => {
     const book = sampleBooks.find((b) => b.personalRating === null && b.personalReview === null)!;
     showBook(book.id);
-    await render(<BookDetailScreen />);
+    await renderDetail();
 
     expect(screen.queryByText("OWNER'S NOTE")).not.toBeOnTheScreen();
   });
 
   it("shows a not-found state for an unknown id", async () => {
     showBook("missing");
-    await render(<BookDetailScreen />);
+    await renderDetail();
 
     expect(screen.getByText("This book isn't available anymore.")).toBeOnTheScreen();
   });
 
   it("goes back from the back button", async () => {
     showBook(sampleBooks[0].id);
-    await render(<BookDetailScreen />);
+    await renderDetail();
 
     await fireEvent.press(screen.getByRole("button", { name: "Back" }));
 
     expect(router.back).toHaveBeenCalled();
+  });
+});
+
+describe("BookDetailScreen friends", () => {
+  it("marks a friend's friends-only book", async () => {
+    showBook("5");
+    await renderDetail();
+
+    expect(screen.getByText("Friends only")).toBeOnTheScreen();
+  });
+
+  it("doesn't show a friends-only book from someone who isn't a friend", async () => {
+    showBook("6");
+    await renderDetail();
+
+    expect(screen.getByText("This book isn't available anymore.")).toBeOnTheScreen();
+  });
+
+  it("opens the owner's profile", async () => {
+    const book = sampleBooks[0];
+    showBook(book.id);
+    await renderDetail();
+
+    await fireEvent.press(screen.getByRole("button", { name: `${book.ownerName}'s profile` }));
+
+    expect(router.push).toHaveBeenCalledWith({ pathname: "/user/[id]", params: { id: book.ownerId } });
   });
 });
 

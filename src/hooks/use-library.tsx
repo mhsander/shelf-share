@@ -1,4 +1,4 @@
-import { createContext, useContext, useReducer, type ReactNode } from "react";
+import { createContext, useContext, useReducer, useState, type ReactNode } from "react";
 
 import { sampleLibrary } from "@/data/sample-library";
 import { libraryReducer } from "@/lib/library";
@@ -11,6 +11,9 @@ type AddResult = { ok: true; book: OwnedBook } | { ok: false; reason: "duplicate
 
 type LibraryContextValue = {
   books: OwnedBook[];
+  // The `profiles.all_books_friends_only` switch: when on, every book is friends-only.
+  allFriendsOnly: boolean;
+  setAllFriendsOnly: (value: boolean) => void;
   findByIsbn: (isbn: string) => OwnedBook | undefined;
   addBook: (details: BookDetails, source: BookSource) => AddResult;
   updateBook: (id: string, changes: Partial<BookDetails>) => void;
@@ -25,13 +28,18 @@ function newId() {
   return `local-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-export function LibraryProvider({ children, initialBooks = sampleLibrary }: { children: ReactNode; initialBooks?: OwnedBook[] }) {
+type ProviderProps = { children: ReactNode; initialBooks?: OwnedBook[]; initialAllFriendsOnly?: boolean };
+
+export function LibraryProvider({ children, initialBooks = sampleLibrary, initialAllFriendsOnly = false }: ProviderProps) {
   const [state, dispatch] = useReducer(libraryReducer, { books: initialBooks });
+  const [allFriendsOnly, setAllFriendsOnly] = useState(initialAllFriendsOnly);
 
   const findByIsbn = (isbn: string) => state.books.find((b) => b.isbn === isbn);
 
   const value: LibraryContextValue = {
     books: state.books,
+    allFriendsOnly,
+    setAllFriendsOnly,
     findByIsbn,
     addBook: (details, source) => {
       const existing = details.isbn ? findByIsbn(details.isbn) : undefined;

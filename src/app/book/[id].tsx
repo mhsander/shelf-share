@@ -10,12 +10,15 @@ import { StarRating } from "@/components/star-rating";
 import { StatusPill } from "@/components/status-pill";
 import { colors } from "@/constants/theme";
 import { sampleBooks } from "@/data/sample-books";
+import { useFriends } from "@/hooks/use-friends";
+import { visibleTo } from "@/lib/filter-books";
 
 export default function BookDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [message, setMessage] = useState("");
-  // TODO: replace with a Supabase query for one available `library_books` row.
-  const book = sampleBooks.find((b) => b.id === id);
+  const { friendIds } = useFriends();
+  // TODO: replace with a Supabase query for one available `library_books` row (RLS applies visibility).
+  const book = visibleTo(sampleBooks, friendIds).find((b) => b.id === id);
 
   const backButton = (
     <Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={() => router.back()} style={styles.iconButton}>
@@ -47,12 +50,25 @@ export default function BookDetailScreen() {
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <View style={styles.hero}>
             <BookCover color={book.coverColor} width={140} />
-            <StatusPill status="available" />
+            <View style={styles.pills}>
+              <StatusPill status="available" />
+              {book.visibility === "friends" && (
+                <View style={styles.friendsTag}>
+                  <Ionicons name="people" size={14} color={colors.primary} />
+                  <Text style={styles.friendsTagLabel}>Friends only</Text>
+                </View>
+              )}
+            </View>
             <Text style={styles.title}>{book.title}</Text>
             <Text style={styles.author}>{book.author}</Text>
           </View>
 
-          <View style={styles.ownerCard}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`${book.ownerName}'s profile`}
+            onPress={() => router.push({ pathname: "/user/[id]", params: { id: book.ownerId } })}
+            style={({ pressed }) => [styles.ownerCard, pressed && styles.pressed]}
+          >
             <Avatar name={book.ownerName} uri={null} size={44} />
             <View style={styles.ownerText}>
               <Text style={styles.ownerName}>{book.ownerName}</Text>
@@ -60,7 +76,8 @@ export default function BookDetailScreen() {
                 {book.neighborhood} · {book.ownerBookCount} {book.ownerBookCount === 1 ? "book" : "books"} to lend
               </Text>
             </View>
-          </View>
+            <Ionicons name="chevron-forward" size={20} color={colors.ink} />
+          </Pressable>
 
           {hasNote && (
             <View style={styles.note}>
@@ -138,6 +155,25 @@ const styles = StyleSheet.create({
   author: {
     fontSize: 16,
     color: colors.inkMuted,
+  },
+  pills: {
+    flexDirection: "row",
+    gap: 6,
+  },
+  friendsTag: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: colors.primary,
+  },
+  friendsTagLabel: {
+    fontSize: 13,
+    fontWeight: "800",
+    color: colors.primary,
   },
   ownerCard: {
     flexDirection: "row",

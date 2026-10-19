@@ -39,3 +39,8 @@ export type StatusFilter = "all" | BookStatus;
 export function filterByStatus(books: OwnedBook[], filter: StatusFilter): OwnedBook[] {
   return filter === "all" ? books : books.filter((b) => b.status === filter);
 }
+
+// A book is friends-only if its own setting says so or the owner made their whole library friends-only.
+export function isFriendsOnly(book: OwnedBook, allFriendsOnly: boolean): boolean {
+  return allFriendsOnly || book.visibility === "friends";
+}

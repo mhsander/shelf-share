@@ -25,12 +25,13 @@ const owned: OwnedBook = {
   source: "scan",
   addedAt: "2026-10-01T12:00:00.000Z",
   lentTo: null,
+  visibility: "everyone",
 };
 
 // Prints the library so tests can see what was saved.
 function LibraryProbe() {
   const { books } = useLibrary();
-  return books.map((b) => <Text key={b.id}>{`${b.title}|${b.author}|${b.isbn}|${b.personalRating}|${b.source}`}</Text>);
+  return books.map((b) => <Text key={b.id}>{`${b.title}|${b.author}|${b.isbn}|${b.personalRating}|${b.source}|${b.visibility}`}</Text>);
 }
 
 async function renderForm(initialBooks: OwnedBook[] = []) {
@@ -79,8 +80,30 @@ describe("AddBookScreen", () => {
     await fireEvent.press(screen.getByRole("button", { name: "Rate 4 stars" }));
     await fireEvent.press(screen.getByRole("button", { name: "Add to library" }));
 
-    expect(screen.getByText("The Left Hand of Darkness|Ursula K. Le Guin|9780441478125|4|manual")).toBeOnTheScreen();
+    expect(screen.getByText("The Left Hand of Darkness|Ursula K. Le Guin|9780441478125|4|manual|everyone")).toBeOnTheScreen();
     expect(router.back).toHaveBeenCalled();
+  });
+
+  it("saves a book as friends-only", async () => {
+    await renderForm();
+
+    await fireEvent.changeText(screen.getByLabelText("Title"), "Piranesi");
+    await fireEvent.changeText(screen.getByLabelText("Author"), "Susanna Clarke");
+    await fireEvent.press(screen.getByRole("tab", { name: "Friends only" }));
+    await fireEvent.press(screen.getByRole("button", { name: "Add to library" }));
+
+    expect(screen.getByText("Piranesi|Susanna Clarke|null|null|manual|friends")).toBeOnTheScreen();
+  });
+
+  it("explains when the whole library is friends-only", async () => {
+    await render(
+      <LibraryProvider initialBooks={[]} initialAllFriendsOnly>
+        <AddBookScreen />
+      </LibraryProvider>,
+    );
+
+    expect(screen.getByText("Friends only. Your whole library is friends-only; change this in My library.")).toBeOnTheScreen();
+    expect(screen.queryByRole("tab", { name: "Everyone" })).not.toBeOnTheScreen();
   });
 
   it("says when the ISBN is already in the library", async () => {
@@ -103,7 +126,7 @@ describe("AddBookScreen", () => {
     await fireEvent.changeText(screen.getByLabelText("Author"), "Ursula K. Le Guin");
     await fireEvent.press(screen.getByRole("button", { name: "Add to library" }));
 
-    expect(screen.getByText("The Left Hand of Darkness|Ursula K. Le Guin|9780441478125|null|scan")).toBeOnTheScreen();
+    expect(screen.getByText("The Left Hand of Darkness|Ursula K. Le Guin|9780441478125|null|scan|everyone")).toBeOnTheScreen();
   });
 
   it("edits an existing book", async () => {
@@ -114,7 +137,7 @@ describe("AddBookScreen", () => {
     await fireEvent.press(screen.getByRole("button", { name: "Rate 5 stars" }));
     await fireEvent.press(screen.getByRole("button", { name: "Save changes" }));
 
-    expect(screen.getByText("Piranesi|Susanna Clarke|9781635575637|5|scan")).toBeOnTheScreen();
+    expect(screen.getByText("Piranesi|Susanna Clarke|9781635575637|5|scan|everyone")).toBeOnTheScreen();
     expect(router.back).toHaveBeenCalled();
   });
 });

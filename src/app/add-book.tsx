@@ -6,11 +6,12 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { BookCover } from "@/components/book-cover";
 import { FormField } from "@/components/form-field";
+import { SegmentedControl } from "@/components/segmented-control";
 import { StarRating } from "@/components/star-rating";
 import { colors } from "@/constants/theme";
 import { useLibrary } from "@/hooks/use-library";
 import { normalizeIsbn } from "@/lib/isbn";
-import type { BookDetails, BookSource } from "@/types/book";
+import type { BookDetails, BookSource, BookVisibility } from "@/types/book";
 
 // Add a book by hand, confirm a scanned one (prefilled from params), or edit one (`id` param).
 type Params = {
@@ -26,9 +27,14 @@ type Errors = Partial<Record<"title" | "author" | "isbn" | "review", string>>;
 
 const maxReviewLength = 5000;
 
+const visibilityOptions: { value: BookVisibility; label: string }[] = [
+  { value: "everyone", label: "Everyone" },
+  { value: "friends", label: "Friends only" },
+];
+
 export default function AddBookScreen() {
   const params = useLocalSearchParams<Params>();
-  const { books, addBook, updateBook } = useLibrary();
+  const { books, allFriendsOnly, addBook, updateBook } = useLibrary();
   const editing = params.id ? books.find((b) => b.id === params.id) : undefined;
 
   const [title, setTitle] = useState(editing?.title ?? params.title ?? "");
@@ -36,6 +42,7 @@ export default function AddBookScreen() {
   const [isbn, setIsbn] = useState(editing?.isbn ?? params.isbn ?? "");
   const [rating, setRating] = useState<number | null>(editing?.personalRating ?? null);
   const [review, setReview] = useState(editing?.personalReview ?? "");
+  const [visibility, setVisibility] = useState<BookVisibility>(editing?.visibility ?? "everyone");
   const [errors, setErrors] = useState<Errors>({});
   const coverUrl = editing?.coverUrl ?? (params.coverUrl || null);
 
@@ -61,6 +68,7 @@ export default function AddBookScreen() {
       coverUrl,
       personalRating: rating,
       personalReview: review.trim() || null,
+      visibility,
     };
 
     if (editing) updateBook(editing.id, details);
@@ -114,6 +122,15 @@ export default function AddBookScreen() {
             style={styles.review}
             textAlignVertical="top"
           />
+
+          <View style={styles.ratingField}>
+            <Text style={styles.label}>Who can see it</Text>
+            {allFriendsOnly ? (
+              <Text style={styles.hint}>Friends only. Your whole library is friends-only; change this in My library.</Text>
+            ) : (
+              <SegmentedControl options={visibilityOptions} value={visibility} onChange={setVisibility} />
+            )}
+          </View>
         </ScrollView>
 
         <View style={styles.footer}>
@@ -180,6 +197,10 @@ const styles = StyleSheet.create({
   },
   review: {
     minHeight: 120,
+  },
+  hint: {
+    fontSize: 14,
+    color: colors.inkMuted,
   },
   footer: {
     paddingHorizontal: 20,
