@@ -33,6 +33,18 @@ export default function BookDetailScreen() {
   const [sending, setSending] = useState(false);
   const requestable = book?.status === "available" && book.ownerId !== session?.user.id;
 
+  function reportOwner() {
+    if (!book) return;
+    Alert.alert("Book options", undefined, [
+      {
+        text: "Report user",
+        onPress: () =>
+          router.push({ pathname: "/report/[userId]", params: { userId: book.ownerId } }),
+      },
+      { text: "Cancel", style: "cancel" },
+    ]);
+  }
+
   async function requestBook() {
     if (!id || !session || sending) return;
     setSending(true);
@@ -79,7 +91,18 @@ export default function BookDetailScreen() {
           <Ionicons name="chevron-back" size={22} color={colors.ink} />
         </Pressable>
         <Text style={styles.topTitle} numberOfLines={1}>{book.title}</Text>
-        <View style={styles.iconButtonSpacer} />
+        {book.ownerId === session?.user.id ? (
+          <View style={styles.iconButtonSpacer} />
+        ) : (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Book options"
+            onPress={reportOwner}
+            style={styles.iconButton}
+          >
+            <Ionicons name="ellipsis-horizontal" size={22} color={colors.ink} />
+          </Pressable>
+        )}
       </View>
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">

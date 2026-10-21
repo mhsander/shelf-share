@@ -82,6 +82,7 @@ function AuthGate() {
       <Stack.Screen name="books/[id]" />
       <Stack.Screen name="users/[id]" />
       <Stack.Screen name="requests/[id]" />
+      <Stack.Screen name="report/[userId]" options={{ presentation: "modal" }} />
       <Stack.Screen name="friends" />
       <Stack.Screen name="invite/[code]" options={{ presentation: "modal" }} />
     </Stack>

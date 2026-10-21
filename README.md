@@ -45,6 +45,7 @@ Apply the database migrations, deploy the server-side sender, and configure its 
 npx supabase db push
 npx supabase secrets set PUSH_WEBHOOK_SECRET='<same-random-secret-as-the-vault-value>'
 npx supabase functions deploy send-push
+npx supabase functions deploy delete-account
 ```
 
 Set `PUSH_WEBHOOK_SECRET` only as a Supabase Function secret and create matching Vault
@@ -65,13 +66,23 @@ the underlying database transaction. Set the optional `EXPO_ACCESS_TOKEN` Functi
 if Expo push access-token security is enabled for the EAS project. Expo credentials and
 Supabase/Vault secrets are deployment configuration and are not stored in this repository.
 
+Account deletion is authenticated and performed by the `delete-account` Edge Function. It removes
+the user's avatar, auth identity, profile, books, and push tokens; active loans are cancelled while
+their request and message history remains with the deleted participant labeled "Deleted user".
+Reports are submitted through a validated database function and are not readable through the app;
+review them with an authorized Supabase dashboard account.
+
 ## Checks
 
 ```bash
 npm test           # Jest (jest-expo) + React Native Testing Library
 npm run typecheck
 npm run lint
+npm run build      # Export JavaScript bundles for iOS, Android, and web
 ```
+
+GitHub Actions runs the tests, typecheck, lint, and Expo export on pull requests and pushes to
+`main`.
 
 ## Layout
 

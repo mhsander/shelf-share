@@ -56,7 +56,8 @@ export default function SignInScreen() {
           </View>
           <Text style={styles.title}>Shelf Share</Text>
           <Text style={styles.subtitle}>
-            Borrow good books from people in your community.
+            Share and borrow books with your community. Because good books are
+            meant to be read, not sit on a shelf.
           </Text>
         </View>
 

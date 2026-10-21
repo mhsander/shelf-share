@@ -59,33 +59,54 @@ export type Database = {
       };
       borrow_requests: {
         Row: {
-          book_id: string;
+          book_author: string;
+          book_cover_url: string | null;
+          book_id: string | null;
+          book_title: string;
+          borrower_deleted: boolean;
           borrower_id: string;
+          borrower_name: string;
           created_at: string;
           due_date: string | null;
           id: string;
           lender_id: string;
+          lender_deleted: boolean;
+          lender_name: string;
           status: Database["public"]["Enums"]["request_status"];
           updated_at: string;
         };
         ComputedFields: never;
         Insert: {
-          book_id: string;
+          book_author?: string;
+          book_cover_url?: string | null;
+          book_id?: string | null;
+          book_title?: string;
+          borrower_deleted?: boolean;
           borrower_id: string;
+          borrower_name?: string;
           created_at?: string;
           due_date?: string | null;
           id?: string;
           lender_id: string;
+          lender_deleted?: boolean;
+          lender_name?: string;
           status?: Database["public"]["Enums"]["request_status"];
           updated_at?: string;
         };
         Update: {
-          book_id?: string;
+          book_author?: string;
+          book_cover_url?: string | null;
+          book_id?: string | null;
+          book_title?: string;
+          borrower_deleted?: boolean;
           borrower_id?: string;
+          borrower_name?: string;
           created_at?: string;
           due_date?: string | null;
           id?: string;
           lender_id?: string;
+          lender_deleted?: boolean;
+          lender_name?: string;
           status?: Database["public"]["Enums"]["request_status"];
           updated_at?: string;
         };
@@ -95,20 +116,6 @@ export type Database = {
             columns: ["book_id"];
             isOneToOne: false;
             referencedRelation: "library_books";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "borrow_requests_borrower_id_fkey";
-            columns: ["borrower_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "borrow_requests_lender_id_fkey";
-            columns: ["lender_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
             referencedColumns: ["id"];
           },
         ];
@@ -345,20 +352,6 @@ export type Database = {
         };
         Relationships: [
           {
-            foreignKeyName: "reports_reported_user_id_fkey";
-            columns: ["reported_user_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "reports_reporter_id_fkey";
-            columns: ["reporter_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
-          },
-          {
             foreignKeyName: "reports_request_id_fkey";
             columns: ["request_id"];
             isOneToOne: false;
@@ -396,13 +389,6 @@ export type Database = {
             columns: ["request_id"];
             isOneToOne: false;
             referencedRelation: "borrow_requests";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "request_messages_sender_id_fkey";
-            columns: ["sender_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
             referencedColumns: ["id"];
           },
         ];
@@ -457,6 +443,15 @@ export type Database = {
         Returns: Database["public"]["Enums"]["request_status"];
       };
       send_friend_request: { Args: { p_recipient_id: string }; Returns: string };
+      submit_report: {
+        Args: {
+          p_details?: string | null;
+          p_reason: Database["public"]["Enums"]["report_reason"];
+          p_reported_user_id: string;
+          p_request_id?: string | null;
+        };
+        Returns: string;
+      };
       users_block_each_other: { Args: { p_other_user_id: string }; Returns: boolean };
     };
     Enums: {

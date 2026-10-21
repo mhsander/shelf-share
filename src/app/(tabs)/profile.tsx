@@ -41,14 +41,22 @@ function confirmSignOut(signOut: () => Promise<void>) {
   ]);
 }
 
-function confirmDeleteAccount() {
+function confirmDeleteAccount(deleteAccount: () => Promise<void>) {
   Alert.alert(
     "Delete your account?",
-    'This deletes your profile, books, and photo. Requests and messages with other people stay, shown as "Deleted user". This can\'t be undone.',
+    'This deletes your profile, books, and photo. Active requests are cancelled; request and message history stays, shown as "Deleted user". This can\'t be undone.',
     [
       { text: "Cancel", style: "cancel" },
-      // TODO: call the account-deletion Edge Function once auth is in place.
-      { text: "Delete", style: "destructive", onPress: () => {} },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: () => void deleteAccount().catch((error) =>
+          Alert.alert(
+            "Couldn't delete your account",
+            error instanceof Error ? error.message : "Please try again.",
+          ),
+        ),
+      },
     ],
   );
 }
@@ -69,7 +77,7 @@ function SettingsGroup({ children }: { children: ReactNode }) {
 
 export default function ProfileScreen() {
   const { profile, blocked } = useProfile();
-  const { signOut } = useAuth();
+  const { signOut, deleteAccount } = useAuth();
   const { books, loading: libraryLoading, error: libraryError } = useLibrary();
   const { friends, incoming } = useFriends();
   if (!profile) {
@@ -145,7 +153,7 @@ export default function ProfileScreen() {
             label="Delete account"
             icon="trash-outline"
             danger
-            onPress={confirmDeleteAccount}
+            onPress={() => confirmDeleteAccount(deleteAccount)}
           />
         </SettingsGroup>
         <SettingsGroup>

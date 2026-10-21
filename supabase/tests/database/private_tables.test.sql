@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(25);
+select plan(26);
 
 insert into auth.users (id, email) values
   ('aaaaaaaa-0000-0000-0000-000000000000', 'a@example.test'),
@@ -41,15 +41,24 @@ select lives_ok(
   'user can register their own push token'
 );
 select lives_ok(
-  $$insert into public.reports (reporter_id, reported_user_id, reason)
-    values (auth.uid(), 'aaaaaaaa-0000-0000-0000-000000000000', 'spam')$$,
-  'user can submit a report'
+  $$select public.submit_report(
+    'aaaaaaaa-0000-0000-0000-000000000000', 'spam', null, null
+  )$$,
+  'user can submit a report through the validated RPC'
 );
 select is((select count(*)::int from public.reports), 0, 'reports are not readable through the app');
 select throws_ok(
   $$insert into public.reports (reporter_id, reported_user_id, reason)
-    values ('aaaaaaaa-0000-0000-0000-000000000000', auth.uid(), 'spam')$$,
-  '42501', null, 'user cannot submit a report on someone else''s behalf'
+    values (auth.uid(), 'aaaaaaaa-0000-0000-0000-000000000000', 'spam')$$,
+  '42501', null, 'user cannot bypass report validation with a direct insert'
+);
+select throws_ok(
+  $$select public.submit_report(
+    'cccccccc-0000-0000-0000-000000000000', 'spam', null,
+    current_setting('test.request_id')::uuid
+  )$$,
+  '42501', 'Request is not associated with this report',
+  'request reports must identify the other participant'
 );
 select is((select count(*)::int from public.push_tokens), 1, 'user can read their own push token');
 reset role;

@@ -19,7 +19,11 @@ import type { BlockedUser, Profile } from "@/types/profile";
 
 jest.mock("expo-router", () => ({ router: { push: jest.fn() } }));
 jest.mock("expo-web-browser", () => ({ openBrowserAsync: jest.fn() }));
-jest.mock("@/hooks/use-auth", () => ({ useAuth: () => ({ signOut: jest.fn() }) }));
+const mockSignOut = jest.fn();
+const mockDeleteAccount = jest.fn();
+jest.mock("@/hooks/use-auth", () => ({
+  useAuth: () => ({ signOut: mockSignOut, deleteAccount: mockDeleteAccount }),
+}));
 
 const mockOpen = openBrowserAsync as jest.Mock;
 
@@ -83,6 +87,8 @@ function lastAlertButtons() {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockSignOut.mockResolvedValue(undefined);
+  mockDeleteAccount.mockResolvedValue(undefined);
   jest.spyOn(Alert, "alert").mockImplementation(() => {});
   mockOpen.mockResolvedValue({ type: "opened" });
 });
@@ -158,6 +164,8 @@ describe("ProfileScreen", () => {
       "Cancel",
       "Sign out",
     ]);
+    lastAlertButtons()[1].onPress?.();
+    await waitFor(() => expect(mockSignOut).toHaveBeenCalled());
   });
 
   it("explains what deleting the account removes", async () => {
@@ -175,5 +183,22 @@ describe("ProfileScreen", () => {
       expect.objectContaining({ text: "Cancel" }),
       expect.objectContaining({ text: "Delete", style: "destructive" }),
     ]);
+    lastAlertButtons()[1].onPress?.();
+    await waitFor(() => expect(mockDeleteAccount).toHaveBeenCalled());
+  });
+
+  it("surfaces an account-deletion error", async () => {
+    mockDeleteAccount.mockRejectedValue(new Error("network unavailable"));
+    await renderProfile();
+
+    await fireEvent.press(screen.getByRole("button", { name: "Delete account" }));
+    lastAlertButtons()[1].onPress?.();
+
+    await waitFor(() =>
+      expect(Alert.alert).toHaveBeenLastCalledWith(
+        "Couldn't delete your account",
+        "network unavailable",
+      ),
+    );
   });
 });

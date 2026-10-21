@@ -104,7 +104,31 @@ export default function RequestDetailScreen() {
             <Ionicons name="chevron-back" size={22} color={colors.ink} />
           </Pressable>
           <Text style={styles.topTitle}>Borrow request</Text>
-          <View style={styles.iconButtonSpacer} />
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Request options"
+            onPress={() =>
+              Alert.alert("Request options", undefined, [
+                {
+                  text: "Report user",
+                  onPress: () =>
+                    router.push({
+                      pathname: "/report/[userId]",
+                      params: {
+                        userId: request.borrowerId === session?.user.id
+                          ? request.lenderId
+                          : request.borrowerId,
+                        requestId: request.id,
+                      },
+                    }),
+                },
+                { text: "Cancel", style: "cancel" },
+              ])
+            }
+            style={styles.iconButton}
+          >
+            <Ionicons name="ellipsis-horizontal" size={22} color={colors.ink} />
+          </Pressable>
         </View>
 
         <FlatList

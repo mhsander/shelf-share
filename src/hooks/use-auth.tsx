@@ -1,7 +1,7 @@
 import type { Session } from "@supabase/supabase-js";
 import * as AppleAuthentication from "expo-apple-authentication";
 import * as Crypto from "expo-crypto";
-import { GoogleSignin, isErrorWithCode } from "@react-native-google-signin/google-signin";
+import Constants from "expo-constants";
 import {
   createContext,
   useContext,
@@ -24,19 +24,13 @@ type AuthContextValue = {
   signInWithGoogle: () => Promise<void>;
   signInWithApple: () => Promise<void>;
   signOut: () => Promise<void>;
+  deleteAccount: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 const googleWebClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
 const googleIosClientId = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID;
-
-if (Platform.OS !== "web" && (googleWebClientId || googleIosClientId)) {
-  GoogleSignin.configure({
-    webClientId: googleWebClientId,
-    iosClientId: googleIosClientId,
-  });
-}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
@@ -102,6 +96,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             "Configure the Google web and iOS client IDs and iOS URL scheme before enabling Google sign-in.",
           );
         }
+        if (Constants.expoGoConfig) {
+          throw new Error(
+            "Google Sign-In requires a development build. Expo Go does not include its native module.",
+          );
+        }
+        const { GoogleSignin } = await import("@react-native-google-signin/google-signin");
+        GoogleSignin.configure({
+          webClientId: googleWebClientId,
+          iosClientId: googleIosClientId,
+        });
         await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
         const response = await GoogleSignin.signIn();
         if (response.type === "cancelled") return;
@@ -151,6 +155,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const { error: signOutError } = await requireSupabase().auth.signOut();
         if (signOutError) throw signOutError;
       },
+      async deleteAccount() {
+        const client = requireSupabase();
+        const { error: deletionError } = await client.functions.invoke("delete-account", {
+          method: "POST",
+        });
+        if (deletionError) throw deletionError;
+        const { error: signOutError } = await client.auth.signOut({ scope: "local" });
+        if (signOutError) throw signOutError;
+      },
     }),
     [session, loading, error],
   );
@@ -165,5 +178,10 @@ export function useAuth() {
 }
 
 export function isGoogleSignInCancellation(error: unknown) {
-  return isErrorWithCode(error) && error.code === "SIGN_IN_CANCELLED";
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    error.code === "SIGN_IN_CANCELLED"
+  );
 }

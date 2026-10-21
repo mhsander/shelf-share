@@ -67,6 +67,15 @@ describe("UserProfileScreen", () => {
     await waitFor(() => expect(mockSendRequest).toHaveBeenCalledWith(expect.objectContaining({ id: "user-b" })));
   });
 
+  it("opens the report form for this user", async () => {
+    await render(<UserProfileScreen />);
+    await fireEvent.press(screen.getByRole("button", { name: "Report user" }));
+    expect(router.push).toHaveBeenCalledWith({
+      pathname: "/report/[userId]",
+      params: { userId: profile.id },
+    });
+  });
+
   it("opens a selected book", async () => {
     await render(<UserProfileScreen />);
     await fireEvent.press(screen.getByRole("button", { name: "Piranesi by Susanna Clarke" }));

@@ -15,7 +15,7 @@ export type BorrowRequestSummary = {
   dueDate: string | null;
   role: "borrower" | "lender";
   counterpartName: string;
-  book: { id: string; title: string; author: string; coverUrl: string | null };
+  book: { id: string | null; title: string; author: string; coverUrl: string | null };
   latestMessage: string | null;
 };
 
@@ -36,7 +36,7 @@ export type BorrowRequestDetails = BorrowRequestSummary & {
 };
 
 const requestFields =
-  "id,book_id,borrower_id,lender_id,status,due_date,created_at,updated_at,library_books!borrow_requests_book_id_fkey(id,title,author,cover_url)";
+  "id,book_id,book_title,book_author,book_cover_url,borrower_id,lender_id,borrower_name,lender_name,borrower_deleted,lender_deleted,status,due_date,created_at,updated_at,library_books!borrow_requests_book_id_fkey(id,title,author,cover_url)";
 
 export function useBorrowRequests() {
   const { session } = useAuth();
@@ -75,7 +75,6 @@ export function useBorrowRequests() {
 
       return rows.flatMap((row) => {
         const book = row.library_books;
-        if (!book) return [];
         const otherId = row.borrower_id === userId ? row.lender_id : row.borrower_id;
         const lastMessage = latestMessage.get(row.id);
         return [{
@@ -84,8 +83,17 @@ export function useBorrowRequests() {
           createdAt: row.created_at,
           dueDate: row.due_date,
           role: row.borrower_id === userId ? "borrower" as const : "lender" as const,
-          counterpartName: names.get(otherId) ?? "Neighbor",
-          book: { id: book.id, title: book.title, author: book.author, coverUrl: book.cover_url },
+          counterpartName:
+            names.get(otherId) ??
+            (row.borrower_id === userId
+              ? row.lender_deleted ? "Deleted user" : "Neighbor"
+              : row.borrower_deleted ? "Deleted user" : "Neighbor"),
+          book: {
+            id: book?.id ?? null,
+            title: book?.title ?? row.book_title,
+            author: book?.author ?? row.book_author,
+            coverUrl: book?.cover_url ?? row.book_cover_url,
+          },
           latestMessage: lastMessage?.body ?? null,
           activityAt: lastMessage && lastMessage.createdAt > row.updated_at
             ? lastMessage.createdAt
@@ -123,8 +131,10 @@ export function useBorrowRequest(id: string | undefined) {
       if (profileError) throw profileError;
       if (messagesError) throw messagesError;
       const names = new Map(profiles.map((profile) => [profile.id, profile.display_name]));
-      const borrowerName = names.get(row.borrower_id) ?? "Neighbor";
-      const lenderName = names.get(row.lender_id) ?? "Neighbor";
+      const borrowerName =
+        names.get(row.borrower_id) ?? (row.borrower_deleted ? "Deleted user" : "Neighbor");
+      const lenderName =
+        names.get(row.lender_id) ?? (row.lender_deleted ? "Deleted user" : "Neighbor");
       const latestMessage = messages.at(-1);
       return {
         id: row.id,
@@ -138,10 +148,10 @@ export function useBorrowRequest(id: string | undefined) {
         lenderName,
         counterpartName: row.borrower_id === userId ? lenderName : borrowerName,
         book: {
-          id: row.library_books.id,
-          title: row.library_books.title,
-          author: row.library_books.author,
-          coverUrl: row.library_books.cover_url,
+          id: row.library_books?.id ?? null,
+          title: row.library_books?.title ?? row.book_title,
+          author: row.library_books?.author ?? row.book_author,
+          coverUrl: row.library_books?.cover_url ?? row.book_cover_url,
         },
         latestMessage: latestMessage?.body ?? null,
         activityAt: latestMessage?.created_at && latestMessage.created_at > row.updated_at
@@ -150,7 +160,9 @@ export function useBorrowRequest(id: string | undefined) {
         messages: messages.map((message) => ({
           id: message.id,
           senderId: message.sender_id,
-          senderName: names.get(message.sender_id) ?? "Neighbor",
+          senderName:
+            names.get(message.sender_id) ??
+            (message.sender_id === row.borrower_id ? borrowerName : lenderName),
           body: message.body,
           createdAt: message.created_at,
         })),

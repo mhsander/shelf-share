@@ -66,41 +66,51 @@ export default function UserProfileScreen() {
                 {profile.books.length} {profile.books.length === 1 ? "book" : "books"} available to lend
               </Text>
               {!isSelf && (
-                <View style={styles.friendActions}>
-                  {friend ? (
-                    <Text style={styles.friendStatus}>Friends</Text>
-                  ) : request?.direction === "incoming" ? (
-                    <>
+                <>
+                  <View style={styles.friendActions}>
+                    {friend ? (
+                      <Text style={styles.friendStatus}>Friends</Text>
+                    ) : request?.direction === "incoming" ? (
+                      <>
+                        <FriendButton
+                          label="Accept request"
+                          disabled={savingFriend}
+                          onPress={() => void runFriendAction(() => accept(profile.id))}
+                        />
+                        <FriendButton
+                          label="Decline"
+                          disabled={savingFriend}
+                          secondary
+                          onPress={() => void runFriendAction(() => decline(profile.id))}
+                        />
+                      </>
+                    ) : request ? (
+                      <>
+                        <Text style={styles.friendStatus}>Request pending</Text>
+                        <FriendButton
+                          label="Cancel request"
+                          disabled={savingFriend}
+                          secondary
+                          onPress={() => void runFriendAction(() => cancelRequest(profile.id))}
+                        />
+                      </>
+                    ) : (
                       <FriendButton
-                        label="Accept request"
+                        label="Add friend"
                         disabled={savingFriend}
-                        onPress={() => void runFriendAction(() => accept(profile.id))}
+                        onPress={() => void runFriendAction(() => sendRequest(profile))}
                       />
-                      <FriendButton
-                        label="Decline"
-                        disabled={savingFriend}
-                        secondary
-                        onPress={() => void runFriendAction(() => decline(profile.id))}
-                      />
-                    </>
-                  ) : request ? (
-                    <>
-                      <Text style={styles.friendStatus}>Request pending</Text>
-                      <FriendButton
-                        label="Cancel request"
-                        disabled={savingFriend}
-                        secondary
-                        onPress={() => void runFriendAction(() => cancelRequest(profile.id))}
-                      />
-                    </>
-                  ) : (
-                    <FriendButton
-                      label="Add friend"
-                      disabled={savingFriend}
-                      onPress={() => void runFriendAction(() => sendRequest(profile))}
-                    />
-                  )}
-                </View>
+                    )}
+                  </View>
+                  <FriendButton
+                    label="Report user"
+                    disabled={savingFriend}
+                    secondary
+                    onPress={() =>
+                      router.push({ pathname: "/report/[userId]", params: { userId: profile.id } })
+                    }
+                  />
+                </>
               )}
             </View>
             <Text style={styles.sectionTitle}>Available books</Text>
