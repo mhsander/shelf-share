@@ -21,15 +21,15 @@ export type ListedBook = {
   ownerId: string;
   ownerName: string;
   neighborhood: string;
-  // How many of the owner's books are available to lend.
-  ownerBookCount: number;
+  // Number may be unavailable when the query returns only the current book.
+  ownerBookCount?: number;
   coverColor: CoverColor;
-  // Already resolved against the owner's library-wide setting.
-  visibility: BookVisibility;
+  visibility?: BookVisibility;
   // The owner's note, shown on the book detail screen.
-  personalRating: number | null;
-  personalReview: string | null;
-  info: BookInfo | null;
+  personalRating?: number | null;
+  personalReview?: string | null;
+  info?: BookInfo | null;
+  coverUrl?: string | null;
 };
 
 // Mirrors the `book_status` and `book_source` enums in Postgres.
@@ -50,7 +50,7 @@ export type OwnedBook = {
   addedAt: string;
   // From the book's `lent` borrow request; null unless status is `lent`.
   lentTo: { name: string; dueDate: string } | null;
-  // Overridden to friends-only when the owner makes their whole library friends-only.
+  // Friends-only visibility is enforced by Postgres RLS.
   visibility: BookVisibility;
   // Null for books typed in by hand or saved before the lookup returned.
   info: BookInfo | null;

@@ -13,11 +13,13 @@ import { links } from "@/constants/links";
 import { FriendsProvider } from "@/hooks/use-friends";
 import { LibraryProvider } from "@/hooks/use-library";
 import { ProfileProvider } from "@/hooks/use-profile";
+import type { FriendsState } from "@/lib/friends";
 import type { BookStatus, OwnedBook } from "@/types/book";
 import type { BlockedUser, Profile } from "@/types/profile";
 
 jest.mock("expo-router", () => ({ router: { push: jest.fn() } }));
 jest.mock("expo-web-browser", () => ({ openBrowserAsync: jest.fn() }));
+jest.mock("@/hooks/use-auth", () => ({ useAuth: () => ({ signOut: jest.fn() }) }));
 
 const mockOpen = openBrowserAsync as jest.Mock;
 
@@ -52,6 +54,7 @@ const profile: Profile = {
   avatarUrl: null,
 };
 const blocked: BlockedUser[] = [{ id: "b1", displayName: "Chloe" }];
+const noFriends: FriendsState = { friends: [], incoming: [], outgoing: [] };
 
 async function renderProfile(overrides: Partial<Profile> = {}) {
   await render(
@@ -60,7 +63,7 @@ async function renderProfile(overrides: Partial<Profile> = {}) {
         initialProfile={{ ...profile, ...overrides }}
         initialBlocked={blocked}
       >
-        <FriendsProvider>
+        <FriendsProvider initialState={noFriends}>
           <ProfileScreen />
         </FriendsProvider>
       </ProfileProvider>

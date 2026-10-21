@@ -13,7 +13,7 @@ const profile: Profile = { displayName: "Ana", city: "Seattle", neighborhood: "C
 // Prints the stored profile so tests can see what was saved.
 function ProfileProbe() {
   const { profile: p } = useProfile();
-  return <Text testID="probe">{`${p.displayName}|${p.city}|${p.neighborhood}`}</Text>;
+  return <Text testID="probe">{`${p?.displayName}|${p?.city}|${p?.neighborhood}`}</Text>;
 }
 
 async function renderForm() {

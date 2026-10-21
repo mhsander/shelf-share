@@ -97,17 +97,6 @@ describe("AddBookScreen", () => {
     expect(screen.getByText("Piranesi|Susanna Clarke|null|null|manual|friends|undefined")).toBeOnTheScreen();
   });
 
-  it("explains when the whole library is friends-only", async () => {
-    await render(
-      <LibraryProvider initialBooks={[]} initialAllFriendsOnly>
-        <AddBookScreen />
-      </LibraryProvider>,
-    );
-
-    expect(screen.getByText("Friends only. Your whole library is friends-only; change this in My library.")).toBeOnTheScreen();
-    expect(screen.queryByRole("tab", { name: "Everyone" })).not.toBeOnTheScreen();
-  });
-
   it("keeps the lookup details from a scan", async () => {
     const info = { description: "A house.", publisher: "Bloomsbury Publishing", publishedYear: 2020, pageCount: 245, subjects: [] };
     mockParams.mockReturnValue({ isbn: "9781635575637", title: "Piranesi", author: "Susanna Clarke", info: JSON.stringify(info), source: "scan" });

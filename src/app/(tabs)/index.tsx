@@ -6,20 +6,20 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { BookCard } from "@/components/book-card";
 import { FilterChip } from "@/components/filter-chip";
 import { colors } from "@/constants/theme";
-import { sampleBooks } from "@/data/sample-books";
+import { useProfile } from "@/hooks/use-profile";
+import { useSearchBooks } from "@/hooks/use-books";
 import { useFriends } from "@/hooks/use-friends";
-import { filterBooks, fromFriends, visibleTo } from "@/lib/filter-books";
-
-// TODO: replace with the signed-in user's profile city.
-const userCity = "Seattle";
+import { fromFriends, visibleTo } from "@/lib/filter-books";
 
 export default function SearchScreen() {
   const [query, setQuery] = useState("");
   const [friendsOnly, setFriendsOnly] = useState(false);
+  const { profile } = useProfile();
+  const { data: allBooks = [], isLoading, error } = useSearchBooks(query, profile?.city ?? null);
   const { friendIds } = useFriends();
-  // TODO: Postgres applies the visibility rule through RLS; the client filter goes away then.
-  const visible = visibleTo(sampleBooks, friendIds);
-  const books = filterBooks(friendsOnly ? fromFriends(visible, friendIds) : visible, query);
+  const visibleBooks = visibleTo(allBooks, friendIds);
+  const books = friendsOnly ? fromFriends(visibleBooks, friendIds) : visibleBooks;
+  const userCity = profile?.city ?? "Your city";
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top"]}>
@@ -68,7 +68,13 @@ export default function SearchScreen() {
         }
         ListEmptyComponent={
           <Text style={styles.empty}>
-            {friendsOnly && friendIds.size === 0 ? "Add friends to see their books here." : "No books match your search yet."}
+            {isLoading
+              ? "Loading books…"
+              : error
+                ? "Could not load books. Please try again."
+                : friendsOnly && friendIds.size === 0
+                  ? "Add friends to see their books here."
+                  : "No books match your search yet."}
           </Text>
         }
       />

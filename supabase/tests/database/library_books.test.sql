@@ -3,7 +3,7 @@
 -- a owns: a-available, a-hidden, a-lent. b owns b-available. c owns c-available.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(19);
+select plan(20);
 
 insert into auth.users (id, email) values
   ('aaaaaaaa-0000-0000-0000-000000000000', 'a@example.test'),
@@ -61,6 +61,15 @@ select ok(
   exists (select 1 from public.library_books where title = 'a-available'),
   'cannot update or delete another user''s book'
 );
+
+select set_config('request.jwt.claims', '{"sub":"cccccccc-0000-0000-0000-000000000000","role":"authenticated"}', true);
+set local role authenticated;
+select is(
+  (select count(*)::int from public.library_books where owner_id = 'aaaaaaaa-0000-0000-0000-000000000000'),
+  0,
+  'blocked user cannot see the blocker''s books'
+);
+reset role;
 
 -- a sees all their own books and b's, but not c's (blocked)
 select set_config('request.jwt.claims', '{"sub":"aaaaaaaa-0000-0000-0000-000000000000","role":"authenticated"}', true);

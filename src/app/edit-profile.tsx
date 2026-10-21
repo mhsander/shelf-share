@@ -1,6 +1,6 @@
 import { router } from "expo-router";
 import { useState } from "react";
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { FormField } from "@/components/form-field";
@@ -13,6 +13,19 @@ type Field = keyof ProfileDraft;
 
 export default function EditProfileScreen() {
   const { profile, updateProfile } = useProfile();
+  if (!profile) {
+    return <SafeAreaView style={styles.safeArea}><Text style={styles.note}>Your profile is unavailable.</Text></SafeAreaView>;
+  }
+  return <EditProfileForm profile={profile} updateProfile={updateProfile} />;
+}
+
+function EditProfileForm({
+  profile,
+  updateProfile,
+}: {
+  profile: NonNullable<ReturnType<typeof useProfile>["profile"]>;
+  updateProfile: ReturnType<typeof useProfile>["updateProfile"];
+}) {
   const [draft, setDraft] = useState<ProfileDraft>({
     displayName: profile.displayName,
     city: profile.city,
@@ -31,10 +44,17 @@ export default function EditProfileScreen() {
     };
   }
 
-  function save() {
+  async function save() {
     if (!result.ok) return;
-    updateProfile(result.profile);
-    router.back();
+    try {
+      await updateProfile(result.profile);
+      router.back();
+    } catch (error) {
+      Alert.alert(
+        "Couldn't update your profile",
+        error instanceof Error ? error.message : "Please try again.",
+      );
+    }
   }
 
   return (
@@ -78,7 +98,7 @@ export default function EditProfileScreen() {
             accessibilityRole="button"
             accessibilityState={{ disabled: !result.ok }}
             disabled={!result.ok}
-            onPress={save}
+            onPress={() => void save()}
             style={({ pressed }) => [styles.primaryButton, (pressed || !result.ok) && styles.dimmed]}
           >
             <Text style={styles.primaryLabel}>Save</Text>

@@ -27,7 +27,7 @@ function PersonRow({ person, children }: { person: Person; children?: ReactNode 
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={`${person.displayName}'s profile`}
-        onPress={() => router.push({ pathname: "/user/[id]", params: { id: person.id } })}
+        onPress={() => router.push({ pathname: "/users/[id]", params: { id: person.id } })}
         style={styles.person}
       >
         <Avatar name={person.displayName} uri={person.avatarUrl} size={40} />

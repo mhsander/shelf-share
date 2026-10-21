@@ -31,7 +31,7 @@ export default function InviteScreen() {
 
   function addFriend() {
     sendRequest(inviter!);
-    router.replace({ pathname: "/user/[id]", params: { id: inviter!.id } });
+    router.replace({ pathname: "/users/[id]", params: { id: inviter!.id } });
   }
 
   return (
@@ -47,7 +47,7 @@ export default function InviteScreen() {
         {relationship === "friends" || relationship === "requestSent" ? (
           <Pressable
             accessibilityRole="button"
-            onPress={() => router.replace({ pathname: "/user/[id]", params: { id: inviter.id } })}
+            onPress={() => router.replace({ pathname: "/users/[id]", params: { id: inviter.id } })}
             style={styles.primary}
           >
             <Text style={styles.primaryLabel}>See {name}&apos;s books</Text>

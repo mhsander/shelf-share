@@ -11,10 +11,10 @@ export function BookCard({ book }: { book: ListedBook }) {
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={`${book.title} by ${book.author}`}
-      onPress={() => router.push({ pathname: "/book/[id]", params: { id: book.id } })}
+      onPress={() => router.push({ pathname: "/books/[id]", params: { id: book.id } })}
       style={({ pressed }) => [styles.card, pressed && styles.pressed]}
     >
-      <BookCover color={book.coverColor} />
+      <BookCover color={book.coverColor} uri={book.coverUrl} />
       <View style={styles.text}>
         <Text style={styles.title} numberOfLines={1}>
           {book.title}

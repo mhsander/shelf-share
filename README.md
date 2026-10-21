@@ -16,6 +16,19 @@ npm install
 npm start          # Expo dev server; press i / a / w for iOS, Android, or web
 ```
 
+### Connect Supabase and sign-in providers
+
+Copy `.env.example` to `.env` and set the Supabase project URL and publishable (or legacy
+anon) key. Do not put a service-role key in the app. Enable Google and Apple providers in
+Supabase Auth. Google additionally needs web and iOS OAuth client IDs; set the IDs in the
+matching `EXPO_PUBLIC_GOOGLE_*_CLIENT_ID` variables. Set `GOOGLE_IOS_URL_SCHEME` to the
+reversed iOS client ID so the Google config plugin can register the native callback URL.
+
+Google Sign-In uses native code and requires a development build; it is not available in
+Expo Go. Apple Sign-In appears on supported iOS devices. After changing native configuration,
+rebuild the development app. First sign-in is gated on creating a profile with a display name
+and city.
+
 ## Checks
 
 ```bash
@@ -31,7 +44,7 @@ src/app/          # routes only (Expo Router); (tabs)/ holds Search, My library,
 src/components/   # shared UI
 src/constants/    # theme colors
 src/lib/          # plain logic
-src/data/         # sample data until Supabase queries are wired up
+src/data/         # sample data used by component tests
 supabase/         # Supabase CLI config; SQL migrations go in supabase/migrations/
 ```
 

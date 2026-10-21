@@ -50,17 +50,6 @@ describe("LibraryScreen", () => {
     expect(screen.getByText("Friends only")).toBeOnTheScreen();
   });
 
-  it("makes every book friends-only with the library switch", async () => {
-    await renderLibrary();
-    expect(screen.queryByText("Friends only")).not.toBeOnTheScreen();
-
-    await fireEvent(screen.getByLabelText("Only friends can see my books"), "valueChange", true);
-
-    // Lent and hidden books keep their own detail; the available book shows the new setting.
-    expect(screen.getByText("Friends only")).toBeOnTheScreen();
-    expect(screen.getByText("Applies to every book in your library.")).toBeOnTheScreen();
-  });
-
   it("filters by status", async () => {
     await renderLibrary();
 

@@ -1,7 +1,7 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { router } from "expo-router";
 import { useState, type ComponentProps } from "react";
-import { Alert, FlatList, Pressable, StyleSheet, Switch, Text, View } from "react-native";
+import { Alert, FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { LibraryRow } from "@/components/library-row";
@@ -44,7 +44,7 @@ function ActionTile({ icon, label, primary = false, disabled = false, onPress }:
 }
 
 export default function LibraryScreen() {
-  const { books, allFriendsOnly, setAllFriendsOnly, setStatus, removeBook } = useLibrary();
+  const { books, setStatus, removeBook, loading, error } = useLibrary();
   const [filter, setFilter] = useState<StatusFilter>("all");
   const visible = filterByStatus(books, filter);
 
@@ -59,18 +59,25 @@ export default function LibraryScreen() {
 
     const toggle =
       book.status === "hidden"
-        ? { text: "Show to others", onPress: () => setStatus(book.id, "available") }
-        : { text: "Hide from others", onPress: () => setStatus(book.id, "hidden") };
+        ? { text: "Show to others", onPress: () => void setStatus(book.id, "available").catch(showDatabaseError) }
+        : { text: "Hide from others", onPress: () => void setStatus(book.id, "hidden").catch(showDatabaseError) };
     const remove = {
       text: "Remove from library",
       style: "destructive" as const,
       onPress: () =>
         Alert.alert("Remove this book?", `"${book.title}" will be deleted from your library.`, [
           cancel,
-          { text: "Remove", style: "destructive", onPress: () => removeBook(book.id) },
+          { text: "Remove", style: "destructive", onPress: () => void removeBook(book.id).catch(showDatabaseError) },
         ]),
     };
     Alert.alert(book.title, undefined, [edit, toggle, remove, cancel]);
+  }
+
+  function showDatabaseError(error: unknown) {
+    Alert.alert(
+      "Couldn't update your library",
+      error instanceof Error ? error.message : "Please try again.",
+    );
   }
 
   return (
@@ -79,7 +86,7 @@ export default function LibraryScreen() {
         data={visible}
         keyExtractor={(book) => book.id}
         renderItem={({ item }) => (
-          <LibraryRow book={item} friendsOnly={isFriendsOnly(item, allFriendsOnly)} onMenu={() => openMenu(item)} />
+          <LibraryRow book={item} friendsOnly={isFriendsOnly(item, false)} onMenu={() => openMenu(item)} />
         )}
         contentContainerStyle={styles.content}
         ListHeaderComponent={
@@ -98,27 +105,18 @@ export default function LibraryScreen() {
               <ActionTile icon="download-outline" label="Import CSV" disabled />
             </View>
 
-            <View style={styles.switchRow}>
-              <View style={styles.switchText}>
-                <Text style={styles.switchLabel}>Only friends can see my books</Text>
-                <Text style={styles.switchHint}>
-                  {allFriendsOnly ? "Applies to every book in your library." : "Or choose per book in Edit details."}
-                </Text>
-              </View>
-              <Switch
-                accessibilityLabel="Only friends can see my books"
-                value={allFriendsOnly}
-                onValueChange={setAllFriendsOnly}
-                trackColor={{ true: colors.primary, false: colors.borderStrong }}
-              />
-            </View>
-
             <SegmentedControl options={filters} value={filter} onChange={setFilter} />
           </View>
         }
         ListEmptyComponent={
           <Text style={styles.empty}>
-            {filter === "all" ? "No books yet. Scan one to get started." : `No ${filter} books.`}
+            {loading
+              ? "Loading your library…"
+              : error
+                ? "Could not load your library. Please try again."
+                : filter === "all"
+                  ? "No books yet. Scan one to get started."
+                  : `No ${filter} books.`}
           </Text>
         }
       />
@@ -180,29 +178,6 @@ const styles = StyleSheet.create({
   },
   dimmed: {
     opacity: 0.5,
-  },
-  switchRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    padding: 14,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-  },
-  switchText: {
-    flex: 1,
-    gap: 2,
-  },
-  switchLabel: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: colors.ink,
-  },
-  switchHint: {
-    fontSize: 13,
-    color: colors.inkMuted,
   },
   empty: {
     fontSize: 15,

@@ -16,6 +16,23 @@ async function renderSearch(friends: FriendsState = noFriends) {
   );
 }
 
+jest.mock("@/hooks/use-profile", () => ({
+  useProfile: () => ({
+    profile: { displayName: "Ana", city: "Seattle", neighborhood: null, avatarUrl: null },
+  }),
+}));
+jest.mock("@/hooks/use-books", () => {
+  const { sampleBooks: books } = jest.requireActual("@/data/sample-books") as typeof import("@/data/sample-books");
+  const { filterBooks: filter } = jest.requireActual("@/lib/filter-books") as typeof import("@/lib/filter-books");
+  return {
+    useSearchBooks: (query: string) => ({
+      data: filter(books, query),
+      isLoading: false,
+      error: null,
+    }),
+  };
+});
+
 describe("SearchScreen", () => {
   it("lists new books in the user's city", async () => {
     await renderSearch();

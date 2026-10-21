@@ -1,7 +1,7 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { BookCover } from "@/components/book-cover";
@@ -45,7 +45,7 @@ const visibilityOptions: { value: BookVisibility; label: string }[] = [
 
 export default function AddBookScreen() {
   const params = useLocalSearchParams<Params>();
-  const { books, allFriendsOnly, addBook, updateBook } = useLibrary();
+  const { books, addBook, updateBook } = useLibrary();
   const editing = params.id ? books.find((b) => b.id === params.id) : undefined;
 
   const [title, setTitle] = useState(editing?.title ?? params.title ?? "");
@@ -57,7 +57,7 @@ export default function AddBookScreen() {
   const [errors, setErrors] = useState<Errors>({});
   const coverUrl = editing?.coverUrl ?? (params.coverUrl || null);
 
-  function save() {
+  async function save() {
     const next: Errors = {};
     const normalizedIsbn = isbn.trim() ? normalizeIsbn(isbn) : null;
 
@@ -82,9 +82,23 @@ export default function AddBookScreen() {
       visibility,
     };
 
-    if (editing) updateBook(editing.id, details);
-    else addBook(details, params.source ?? "manual", parseInfo(params.info));
-    router.back();
+    try {
+      if (editing) {
+        await updateBook(editing.id, details);
+      } else {
+        const result = await addBook(details, params.source ?? "manual", parseInfo(params.info));
+        if (!result.ok) {
+          setErrors((current) => ({ ...current, isbn: "Already in your library." }));
+          return;
+        }
+      }
+      router.back();
+    } catch (error) {
+      Alert.alert(
+        "Couldn't save the book",
+        error instanceof Error ? error.message : "Please try again.",
+      );
+    }
   }
 
   return (
@@ -136,18 +150,14 @@ export default function AddBookScreen() {
 
           <View style={styles.ratingField}>
             <Text style={styles.label}>Who can see it</Text>
-            {allFriendsOnly ? (
-              <Text style={styles.hint}>Friends only. Your whole library is friends-only; change this in My library.</Text>
-            ) : (
-              <SegmentedControl options={visibilityOptions} value={visibility} onChange={setVisibility} />
-            )}
+            <SegmentedControl options={visibilityOptions} value={visibility} onChange={setVisibility} />
           </View>
         </ScrollView>
 
         <View style={styles.footer}>
           <Pressable
             accessibilityRole="button"
-            onPress={save}
+            onPress={() => void save()}
             style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]}
           >
             <Text style={styles.primaryLabel}>{editing ? "Save changes" : "Add to library"}</Text>

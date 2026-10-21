@@ -14,6 +14,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Avatar } from "@/components/avatar";
 import { SettingsRow } from "@/components/settings-row";
 import { colors } from "@/constants/theme";
+import { links } from "@/constants/links";
+import { useAuth } from "@/hooks/use-auth";
 import { useFriends } from "@/hooks/use-friends";
 import { useLibrary } from "@/hooks/use-library";
 import { useProfile } from "@/hooks/use-profile";
@@ -27,11 +29,15 @@ async function openLink(url: string) {
   }
 }
 
-function confirmSignOut() {
+function confirmSignOut(signOut: () => Promise<void>) {
   Alert.alert("Sign out?", undefined, [
     { text: "Cancel", style: "cancel" },
-    // TODO: call Supabase `signOut` once auth is in place.
-    { text: "Sign out", onPress: () => {} },
+    {
+      text: "Sign out",
+      onPress: () => void signOut().catch((error) =>
+        Alert.alert("Couldn't sign out", error instanceof Error ? error.message : "Please try again."),
+      ),
+    },
   ]);
 }
 
@@ -63,8 +69,16 @@ function SettingsGroup({ children }: { children: ReactNode }) {
 
 export default function ProfileScreen() {
   const { profile, blocked } = useProfile();
-  const { books } = useLibrary();
+  const { signOut } = useAuth();
+  const { books, loading: libraryLoading, error: libraryError } = useLibrary();
   const { friends, incoming } = useFriends();
+  if (!profile) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <Text style={styles.title}>Profile unavailable</Text>
+      </SafeAreaView>
+    );
+  }
   const counts = libraryCounts(books);
   const location = [profile.neighborhood, profile.city]
     .filter(Boolean)
@@ -88,8 +102,11 @@ export default function ProfileScreen() {
             </View>
           </View>
           <Text style={styles.counts}>
-            {counts.total} {counts.total === 1 ? "book" : "books"} ·{" "}
-            {counts.available} available · {counts.lent} lent
+            {libraryLoading
+              ? "Loading your library…"
+              : libraryError
+                ? "Could not load your library."
+                : `${counts.total} ${counts.total === 1 ? "book" : "books"} · ${counts.available} available · ${counts.lent} lent`}
           </Text>
           <Pressable
             accessibilityRole="button"
@@ -122,7 +139,7 @@ export default function ProfileScreen() {
           <SettingsRow
             label="Sign out"
             icon="log-out-outline"
-            onPress={confirmSignOut}
+            onPress={() => confirmSignOut(signOut)}
           />
           <SettingsRow
             label="Delete account"
@@ -131,11 +148,15 @@ export default function ProfileScreen() {
             onPress={confirmDeleteAccount}
           />
         </SettingsGroup>
-        <p>
+        <SettingsGroup>
+          <SettingsRow label="Privacy policy" icon="document-text-outline" onPress={() => void openLink(links.privacy)} />
+          <SettingsRow label="Terms" icon="document-text-outline" onPress={() => void openLink(links.terms)} />
+        </SettingsGroup>
+        <Text style={styles.privacy}>
           We value your trust. We do not sell, rent, trade, or share your
           personal information with any third parties for marketing,
           advertising, or commercial purposes.
-        </p>
+        </Text>
       </ScrollView>
     </SafeAreaView>
   );
@@ -204,6 +225,12 @@ const styles = StyleSheet.create({
   },
   pressed: {
     opacity: 0.7,
+  },
+  privacy: {
+    fontSize: 13,
+    lineHeight: 19,
+    color: colors.inkMuted,
+    textAlign: "center",
   },
   group: {
     borderRadius: 16,

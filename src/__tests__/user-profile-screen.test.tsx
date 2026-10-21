@@ -1,93 +1,81 @@
-import { act, fireEvent, render, screen } from "@testing-library/react-native";
-import { useLocalSearchParams } from "expo-router";
-import { Alert } from "react-native";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react-native";
+import { router, useLocalSearchParams } from "expo-router";
 
-import UserProfileScreen from "@/app/user/[id]";
-import { samplePeople } from "@/data/sample-people";
-import { FriendsProvider } from "@/hooks/use-friends";
-import type { FriendsState } from "@/lib/friends";
+import UserProfileScreen from "@/app/users/[id]";
+import { usePublicProfile } from "@/hooks/use-books";
+import { useFriends } from "@/hooks/use-friends";
+
+const mockSendRequest = jest.fn();
+const profile = {
+  id: "user-b",
+  displayName: "Ben",
+  city: "Seattle",
+  neighborhood: "Fremont",
+  avatarUrl: null,
+  books: [{
+    id: "book-1",
+    ownerId: "user-b",
+    title: "Piranesi",
+    author: "Susanna Clarke",
+    ownerName: "Ben",
+    neighborhood: "Fremont",
+    coverColor: "blue" as const,
+    coverUrl: null,
+  }],
+};
 
 jest.mock("expo-router", () => ({
   router: { back: jest.fn(), push: jest.fn() },
   useLocalSearchParams: jest.fn(),
 }));
-
-const person = (id: string) => samplePeople.find((p) => p.id === id)!;
-const dev = person("p-dev");
-const eli = person("p-eli");
-const empty: FriendsState = { friends: [], incoming: [], outgoing: [] };
-
-async function renderProfile(id: string, state: FriendsState = empty) {
-  (useLocalSearchParams as jest.Mock).mockReturnValue({ id });
-  await render(
-    <FriendsProvider initialState={state}>
-      <UserProfileScreen />
-    </FriendsProvider>,
-  );
-}
-
-async function chooseInAlert(text: string) {
-  const calls = (Alert.alert as jest.Mock).mock.calls;
-  const buttons = calls[calls.length - 1][2] as { text: string; onPress?: () => void }[];
-  await act(async () => buttons.find((b) => b.text === text)?.onPress?.());
-}
+jest.mock("@/hooks/use-auth", () => ({
+  useAuth: () => ({ session: { user: { id: "user-a" } } }),
+}));
+jest.mock("@/hooks/use-books", () => ({
+  usePublicProfile: jest.fn(),
+}));
+jest.mock("@/hooks/use-friends", () => ({
+  useFriends: jest.fn(),
+}));
 
 beforeEach(() => {
   jest.clearAllMocks();
-  jest.spyOn(Alert, "alert").mockImplementation(() => {});
+  (useLocalSearchParams as jest.Mock).mockReturnValue({ id: "user-b" });
+  (usePublicProfile as jest.Mock).mockReturnValue({ data: profile, isLoading: false, error: null });
+  (useFriends as jest.Mock).mockReturnValue({
+    friends: [],
+    requests: [],
+    sendRequest: mockSendRequest,
+    accept: jest.fn(),
+    decline: jest.fn(),
+    cancelRequest: jest.fn(),
+  });
+  mockSendRequest.mockResolvedValue(undefined);
 });
 
 describe("UserProfileScreen", () => {
-  it("shows public profile fields and the books you can see", async () => {
-    await renderProfile("p-dev");
-
-    expect(screen.getByText("Dev")).toBeOnTheScreen();
-    expect(screen.getByText("Capitol Hill · Seattle")).toBeOnTheScreen();
-    expect(screen.getByText("The Left Hand of Darkness")).toBeOnTheScreen();
-    // Dev's friends-only book stays hidden until you're friends.
-    expect(screen.queryByText("A Wizard of Earthsea")).not.toBeOnTheScreen();
+  it("shows profile data and books returned by the database hook", async () => {
+    await render(<UserProfileScreen />);
+    expect(screen.getByText("Ben")).toBeOnTheScreen();
+    expect(screen.getByText("Fremont · Seattle")).toBeOnTheScreen();
+    expect(screen.getByText("Piranesi")).toBeOnTheScreen();
   });
 
-  it("shows friends-only books to friends", async () => {
-    await renderProfile("p-dev", { ...empty, friends: [dev] });
-
-    expect(screen.getByText("A Wizard of Earthsea")).toBeOnTheScreen();
-  });
-
-  it("sends and cancels a friend request", async () => {
-    await renderProfile("p-dev");
-
+  it("sends a friend request through the friends hook", async () => {
+    await render(<UserProfileScreen />);
     await fireEvent.press(screen.getByRole("button", { name: "Add friend" }));
-    expect(screen.getByRole("button", { name: "Request sent" })).toBeOnTheScreen();
-
-    await fireEvent.press(screen.getByRole("button", { name: "Request sent" }));
-    await chooseInAlert("Cancel request");
-    expect(screen.getByRole("button", { name: "Add friend" })).toBeOnTheScreen();
+    await waitFor(() => expect(mockSendRequest).toHaveBeenCalledWith(expect.objectContaining({ id: "user-b" })));
   });
 
-  it("accepts a request from them", async () => {
-    await renderProfile("p-eli", { ...empty, incoming: [eli] });
-
-    expect(screen.queryByText("Station Eleven")).not.toBeOnTheScreen();
-    await fireEvent.press(screen.getByRole("button", { name: "Accept" }));
-
-    expect(screen.getByRole("button", { name: "Friends" })).toBeOnTheScreen();
-    expect(screen.getByText("Station Eleven")).toBeOnTheScreen();
+  it("opens a selected book", async () => {
+    await render(<UserProfileScreen />);
+    await fireEvent.press(screen.getByRole("button", { name: "Piranesi by Susanna Clarke" }));
+    expect(router.push).toHaveBeenCalledWith({ pathname: "/books/[id]", params: { id: "book-1" } });
   });
 
-  it("removes a friend after confirming", async () => {
-    await renderProfile("p-eli", { ...empty, friends: [eli] });
-
-    await fireEvent.press(screen.getByRole("button", { name: "Friends" }));
-    await chooseInAlert("Remove");
-
-    expect(screen.getByRole("button", { name: "Add friend" })).toBeOnTheScreen();
-    expect(screen.queryByText("Station Eleven")).not.toBeOnTheScreen();
-  });
-
-  it("shows a not-found state for an unknown user", async () => {
-    await renderProfile("nobody");
-
-    expect(screen.getByText("This profile isn't available.")).toBeOnTheScreen();
+  it("shows an unavailable state when the profile is missing", async () => {
+    (usePublicProfile as jest.Mock).mockReturnValue({ data: null, isLoading: false, error: null });
+    await render(<UserProfileScreen />);
+    expect(screen.getByText("This profile is unavailable.")).toBeOnTheScreen();
   });
 });

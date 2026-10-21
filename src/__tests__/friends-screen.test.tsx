@@ -83,7 +83,7 @@ describe("FriendsScreen", () => {
 
     await fireEvent.press(screen.getByRole("button", { name: "Amir's profile" }));
 
-    expect(router.push).toHaveBeenCalledWith({ pathname: "/user/[id]", params: { id: "p-amir" } });
+    expect(router.push).toHaveBeenCalledWith({ pathname: "/users/[id]", params: { id: "p-amir" } });
   });
 });
 
@@ -111,7 +111,7 @@ describe("InviteScreen", () => {
     await fireEvent.press(screen.getByRole("button", { name: "Add Chloe as a friend" }));
 
     expect(screen.getByText("requestSent")).toBeOnTheScreen();
-    expect(router.replace).toHaveBeenCalledWith({ pathname: "/user/[id]", params: { id: "p-chloe" } });
+    expect(router.replace).toHaveBeenCalledWith({ pathname: "/users/[id]", params: { id: "p-chloe" } });
   });
 
   it("explains an invalid link", async () => {
