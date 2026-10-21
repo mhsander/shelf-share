@@ -1,10 +1,13 @@
 // Book metadata lookup by ISBN: Open Library first, then Google Books (spec §6.2).
 // Both run on the device without an API key.
 
+import type { BookInfo } from "@/types/book";
+
 export type BookMetadata = {
   title: string;
   author: string;
   coverUrl: string | null;
+  info: BookInfo;
 };
 
 export type LookupResult =
@@ -15,6 +18,32 @@ export type LookupResult =
   | { status: "error" };
 
 type FetchFn = (url: string) => Promise<Response>;
+
+const maxSubjects = 4;
+const maxDescriptionLength = 2000;
+
+// "September 15, 2020" or "2020-09-15" -> 2020.
+function yearFrom(date: unknown): number | null {
+  const match = typeof date === "string" ? date.match(/\b(\d{4})\b/) : null;
+  return match ? Number(match[1]) : null;
+}
+
+const positiveOrNull = (n: unknown) => (typeof n === "number" && n > 0 ? n : null);
+
+// Book descriptions arrive as HTML (Google) or Markdown (Open Library); keep plain paragraphs.
+export function cleanDescription(raw: string): string | null {
+  const text = raw
+    .split(/\n-{5,}/)[0]
+    .replace(/<\/p>\s*<p>/gi, "\n\n")
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<[^>]+>/g, "")
+    .replace(/(\*\*|__|\*|_)(\S[^*_]*?\S|\S)\1/g, "$2")
+    .replace(/[ \t]+/g, " ")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+  if (!text) return null;
+  return text.length > maxDescriptionLength ? `${text.slice(0, maxDescriptionLength).trimEnd()}…` : text;
+}
 
 // A service either answered (with a match or null) or failed to answer.
 type ServiceAnswer = { answered: true; book: BookMetadata | null } | { answered: false };
@@ -32,6 +61,18 @@ async function askOpenLibrary(isbn: string, fetchFn: FetchFn): Promise<ServiceAn
         title: record.title,
         author: (record.authors ?? []).map((a: { name: string }) => a.name).join(", "),
         coverUrl: record.cover?.medium ?? null,
+        info: {
+          // Open Library keeps descriptions on the work record; see lookupDescription.
+          description: null,
+          publisher: record.publishers?.[0]?.name ?? null,
+          publishedYear: yearFrom(record.publish_date),
+          pageCount: positiveOrNull(record.number_of_pages),
+          // Skip machine tags like "genre:fantasy" or "nyt:…".
+          subjects: (record.subjects ?? [])
+            .map((subject: { name: string }) => subject.name)
+            .filter((name: string) => !name.includes(":"))
+            .slice(0, maxSubjects),
+        },
       },
     };
   } catch {
@@ -53,6 +94,13 @@ async function askGoogleBooks(isbn: string, fetchFn: FetchFn): Promise<ServiceAn
         title: info.title,
         author: (info.authors ?? []).join(", "),
         coverUrl: thumbnail ? thumbnail.replace(/^http:/, "https:") : null,
+        info: {
+          description: info.description ? cleanDescription(info.description) : null,
+          publisher: info.publisher ?? null,
+          publishedYear: yearFrom(info.publishedDate),
+          pageCount: positiveOrNull(info.pageCount),
+          subjects: (info.categories ?? []).slice(0, maxSubjects),
+        },
       },
     };
   } catch {
@@ -73,4 +121,23 @@ export async function lookupIsbn(isbn: string, fetchFn: FetchFn = fetch): Promis
 
   const partial = (openLibrary.answered && openLibrary.book) || (google.answered && google.book) || null;
   return { status: "not_found", prefill: partial };
+}
+
+// Open Library's edition records don't carry the blurb; it lives on the work (two more requests).
+// Best effort: any failure just means no description.
+export async function lookupDescription(isbn: string, fetchFn: FetchFn = fetch): Promise<string | null> {
+  try {
+    const edition = await fetchFn(`https://openlibrary.org/isbn/${isbn}.json`);
+    if (!edition.ok) return null;
+    const workKey: string | undefined = (await edition.json()).works?.[0]?.key;
+    if (!workKey) return null;
+
+    const work = await fetchFn(`https://openlibrary.org${workKey}.json`);
+    if (!work.ok) return null;
+    const description: unknown = (await work.json()).description;
+    const text = typeof description === "string" ? description : (description as { value?: string } | undefined)?.value;
+    return text ? cleanDescription(text) : null;
+  } catch {
+    return null;
+  }
 }

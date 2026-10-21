@@ -1,14 +1,14 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { router } from "expo-router";
 import { useState, type ComponentProps } from "react";
-import { Alert, FlatList, Pressable, StyleSheet, Text, View } from "react-native";
+import { Alert, FlatList, Pressable, StyleSheet, Switch, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { LibraryRow } from "@/components/library-row";
 import { SegmentedControl } from "@/components/segmented-control";
 import { colors } from "@/constants/theme";
 import { useLibrary } from "@/hooks/use-library";
-import { filterByStatus, type StatusFilter } from "@/lib/library";
+import { filterByStatus, isFriendsOnly, type StatusFilter } from "@/lib/library";
 import type { OwnedBook } from "@/types/book";
 
 const filters: { value: StatusFilter; label: string }[] = [
@@ -44,7 +44,7 @@ function ActionTile({ icon, label, primary = false, disabled = false, onPress }:
 }
 
 export default function LibraryScreen() {
-  const { books, setStatus, removeBook } = useLibrary();
+  const { books, allFriendsOnly, setAllFriendsOnly, setStatus, removeBook } = useLibrary();
   const [filter, setFilter] = useState<StatusFilter>("all");
   const visible = filterByStatus(books, filter);
 
@@ -78,7 +78,9 @@ export default function LibraryScreen() {
       <FlatList
         data={visible}
         keyExtractor={(book) => book.id}
-        renderItem={({ item }) => <LibraryRow book={item} onMenu={() => openMenu(item)} />}
+        renderItem={({ item }) => (
+          <LibraryRow book={item} friendsOnly={isFriendsOnly(item, allFriendsOnly)} onMenu={() => openMenu(item)} />
+        )}
         contentContainerStyle={styles.content}
         ListHeaderComponent={
           <View style={styles.header}>
@@ -94,6 +96,21 @@ export default function LibraryScreen() {
               <ActionTile icon="create-outline" label="Type it in" onPress={() => router.push("/add-book")} />
               {/* TODO: Goodreads CSV import (spec §6.3). */}
               <ActionTile icon="download-outline" label="Import CSV" disabled />
+            </View>
+
+            <View style={styles.switchRow}>
+              <View style={styles.switchText}>
+                <Text style={styles.switchLabel}>Only friends can see my books</Text>
+                <Text style={styles.switchHint}>
+                  {allFriendsOnly ? "Applies to every book in your library." : "Or choose per book in Edit details."}
+                </Text>
+              </View>
+              <Switch
+                accessibilityLabel="Only friends can see my books"
+                value={allFriendsOnly}
+                onValueChange={setAllFriendsOnly}
+                trackColor={{ true: colors.primary, false: colors.borderStrong }}
+              />
             </View>
 
             <SegmentedControl options={filters} value={filter} onChange={setFilter} />
@@ -163,6 +180,29 @@ const styles = StyleSheet.create({
   },
   dimmed: {
     opacity: 0.5,
+  },
+  switchRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    padding: 14,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  switchText: {
+    flex: 1,
+    gap: 2,
+  },
+  switchLabel: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: colors.ink,
+  },
+  switchHint: {
+    fontSize: 13,
+    color: colors.inkMuted,
   },
   empty: {
     fontSize: 15,

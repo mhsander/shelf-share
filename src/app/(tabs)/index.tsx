@@ -7,14 +7,19 @@ import { BookCard } from "@/components/book-card";
 import { FilterChip } from "@/components/filter-chip";
 import { colors } from "@/constants/theme";
 import { sampleBooks } from "@/data/sample-books";
-import { filterBooks } from "@/lib/filter-books";
+import { useFriends } from "@/hooks/use-friends";
+import { filterBooks, fromFriends, visibleTo } from "@/lib/filter-books";
 
 // TODO: replace with the signed-in user's profile city.
 const userCity = "Seattle";
 
 export default function SearchScreen() {
   const [query, setQuery] = useState("");
-  const books = filterBooks(sampleBooks, query);
+  const [friendsOnly, setFriendsOnly] = useState(false);
+  const { friendIds } = useFriends();
+  // TODO: Postgres applies the visibility rule through RLS; the client filter goes away then.
+  const visible = visibleTo(sampleBooks, friendIds);
+  const books = filterBooks(friendsOnly ? fromFriends(visible, friendIds) : visible, query);
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top"]}>
@@ -50,17 +55,22 @@ export default function SearchScreen() {
               <FilterChip label={userCity} selected />
               <FilterChip label="Any neighborhood" />
               <FilterChip label="Available now" />
+              <FilterChip label="Friends' books" selected={friendsOnly} onPress={() => setFriendsOnly((on) => !on)} />
             </View>
 
             <View style={styles.sectionRow}>
-              <Text style={styles.sectionTitle}>New in your city</Text>
+              <Text style={styles.sectionTitle}>{friendsOnly ? "From your friends" : "New in your city"}</Text>
               <Pressable accessibilityRole="button">
                 <Text style={styles.seeAll}>See all</Text>
               </Pressable>
             </View>
           </View>
         }
-        ListEmptyComponent={<Text style={styles.empty}>No books match your search yet.</Text>}
+        ListEmptyComponent={
+          <Text style={styles.empty}>
+            {friendsOnly && friendIds.size === 0 ? "Add friends to see their books here." : "No books match your search yet."}
+          </Text>
+        }
       />
     </SafeAreaView>
   );

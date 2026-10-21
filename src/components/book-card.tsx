@@ -1,4 +1,5 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
+import { router } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { BookCover } from "@/components/book-cover";
@@ -10,6 +11,7 @@ export function BookCard({ book }: { book: ListedBook }) {
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={`${book.title} by ${book.author}`}
+      onPress={() => router.push({ pathname: "/book/[id]", params: { id: book.id } })}
       style={({ pressed }) => [styles.card, pressed && styles.pressed]}
     >
       <BookCover color={book.coverColor} />

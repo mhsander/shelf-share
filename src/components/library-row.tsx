@@ -12,14 +12,22 @@ function formatDueDate(isoDate: string) {
   return new Date(year, month - 1, day).toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
-function statusDetail(book: OwnedBook) {
+function statusDetail(book: OwnedBook, friendsOnly: boolean) {
   if (book.status === "lent" && book.lentTo) return `to ${book.lentTo.name} · due ${formatDueDate(book.lentTo.dueDate)}`;
   if (book.status === "hidden") return "Not shown to others";
+  if (friendsOnly) return "Friends only";
   return null;
 }
 
-export function LibraryRow({ book, onMenu }: { book: OwnedBook; onMenu: () => void }) {
-  const detail = statusDetail(book);
+type Props = {
+  book: OwnedBook;
+  // Whether the book is friends-only once the library-wide setting is applied.
+  friendsOnly: boolean;
+  onMenu: () => void;
+};
+
+export function LibraryRow({ book, friendsOnly, onMenu }: Props) {
+  const detail = statusDetail(book, friendsOnly);
 
   return (
     <View style={styles.card}>
