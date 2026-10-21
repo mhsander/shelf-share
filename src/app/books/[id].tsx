@@ -22,7 +22,7 @@ import { StatusPill } from "@/components/status-pill";
 import { colors } from "@/constants/theme";
 import { useAuth } from "@/hooks/use-auth";
 import { useBookDetails } from "@/hooks/use-books";
-import { queryClient } from "@/lib/query-client";
+import { invalidateBorrowRequests } from "@/hooks/use-requests";
 import { requireSupabase } from "@/lib/supabase";
 
 export default function BookDetailScreen() {
@@ -42,22 +42,22 @@ export default function BookDetailScreen() {
         p_book_id: id,
       });
       if (requestError) throw requestError;
+      let messageErrorMessage: string | null = null;
       if (message.trim()) {
         const { error: messageError } = await client.from("request_messages").insert({
           request_id: requestId,
           sender_id: session.user.id,
           body: message.trim(),
         });
-        if (messageError) {
-          Alert.alert(
-            "Request sent, but message failed",
-            `Your borrow request was sent. The message could not be saved: ${messageError.message}`,
-          );
-        }
+        if (messageError) messageErrorMessage = messageError.message;
       }
-      await queryClient.invalidateQueries({ queryKey: ["activity", session.user.id] });
-      if (!message.trim()) Alert.alert("Request sent", "The owner has been notified.");
-      router.back();
+      await invalidateBorrowRequests();
+      if (messageErrorMessage) {
+        Alert.alert("Request sent, but message failed", `Your borrow request was sent. The message could not be saved: ${messageErrorMessage}`);
+      } else {
+        Alert.alert("Request sent", "The owner has been notified.");
+      }
+      router.push({ pathname: "/requests/[id]", params: { id: requestId } });
     } catch (requestError) {
       Alert.alert(
         "Couldn't request this book",
