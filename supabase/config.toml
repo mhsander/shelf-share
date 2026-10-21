@@ -77,6 +77,9 @@ enabled = false
 # List of IPv4 CIDR blocks allowed to connect to the database.
 # Defaults to allow all IPv4 connections. Set empty array to block all IPs.
 allowed_cidrs = ["0.0.0.0/0"]
+
+[functions.send-push]
+verify_jwt = false
 # List of IPv6 CIDR blocks allowed to connect to the database.
 # Defaults to allow all IPv6 connections. Set empty array to block all IPs.
 allowed_cidrs_v6 = ["::/0"]

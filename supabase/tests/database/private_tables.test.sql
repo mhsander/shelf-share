@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(18);
+select plan(25);
 
 insert into auth.users (id, email) values
   ('aaaaaaaa-0000-0000-0000-000000000000', 'a@example.test'),
@@ -37,8 +37,7 @@ reset role;
 select set_config('request.jwt.claims', '{"sub":"bbbbbbbb-0000-0000-0000-000000000000","role":"authenticated"}', true);
 set local role authenticated;
 select lives_ok(
-  $$insert into public.push_tokens (user_id, expo_push_token, platform)
-    values (auth.uid(), 'ExponentPushToken[b-token]', 'ios')$$,
+  $$select public.register_push_token('ExponentPushToken[b-token]', 'ios')$$,
   'user can register their own push token'
 );
 select lives_ok(
@@ -59,6 +58,16 @@ select set_config('request.jwt.claims', '{"sub":"cccccccc-0000-0000-0000-0000000
 set local role authenticated;
 select is((select count(*)::int from public.request_messages), 0, 'unrelated user cannot read request messages');
 select is((select count(*)::int from public.push_tokens), 0, 'user cannot read another user''s push token');
+select lives_ok(
+  $$select public.unregister_push_token('ExponentPushToken[b-token]')$$,
+  'user cannot unregister another user''s push token'
+);
+select is((select count(*)::int from public.push_tokens), 0, 'another user''s token remains private');
+select lives_ok(
+  $$select public.register_push_token('ExponentPushToken[b-token]', 'android')$$,
+  'authenticated user can claim this device token'
+);
+select is((select count(*)::int from public.push_tokens), 1, 'claimed token belongs to the active user');
 select throws_ok(
   $$insert into public.request_messages (request_id, sender_id, body)
     values (current_setting('test.request_id')::uuid, auth.uid(), 'Intrusion')$$,
@@ -69,6 +78,20 @@ select throws_ok(
     values ('aaaaaaaa-0000-0000-0000-000000000000', 'ExponentPushToken[spoof]', 'ios')$$,
   '42501', null, 'user cannot register a push token for someone else'
 );
+reset role;
+
+select set_config('request.jwt.claims', '{"sub":"bbbbbbbb-0000-0000-0000-000000000000","role":"authenticated"}', true);
+set local role authenticated;
+select is((select count(*)::int from public.push_tokens), 0, 'previous account no longer owns the claimed device token');
+reset role;
+
+select set_config('request.jwt.claims', '{"sub":"cccccccc-0000-0000-0000-000000000000","role":"authenticated"}', true);
+set local role authenticated;
+select lives_ok(
+  $$select public.unregister_push_token('ExponentPushToken[b-token]')$$,
+  'user can unregister their own push token'
+);
+select is((select count(*)::int from public.push_tokens), 0, 'unregistered token is removed');
 reset role;
 
 insert into public.blocks (blocker_id, blocked_id) values

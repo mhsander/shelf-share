@@ -29,6 +29,42 @@ Expo Go. Apple Sign-In appears on supported iOS devices. After changing native c
 rebuild the development app. First sign-in is gated on creating a profile with a display name
 and city.
 
+### Push notifications
+
+Push registration and delivery require a physical device, an EAS project, and a development
+or production build (not Expo Go). Run `npx eas-cli@latest init` to link the app and add its
+EAS project ID to `app.json`; set stable iOS `bundleIdentifier` and Android `package` values,
+configure the iOS APNs and Android FCM credentials using EAS credentials, then rebuild the
+native app after the notifications config plugin is added.
+Permission is requested after the user has completed profile setup. Users can decline it;
+the rest of the app continues to work.
+
+Apply the database migrations, deploy the server-side sender, and configure its shared secret:
+
+```bash
+npx supabase db push
+npx supabase secrets set PUSH_WEBHOOK_SECRET='<same-random-secret-as-the-vault-value>'
+npx supabase functions deploy send-push
+```
+
+Set `PUSH_WEBHOOK_SECRET` only as a Supabase Function secret and create matching Vault
+secrets from the Supabase SQL editor (replace the placeholders; never commit the secret):
+
+```sql
+select vault.create_secret(
+  'https://<project-ref>.supabase.co/functions/v1/send-push',
+  'push_webhook_url'
+);
+select vault.create_secret('<same-random-secret-as-the-function-secret>', 'push_webhook_secret');
+```
+
+The migration schedules due-date reminders daily at 16:00 UTC (about 8–9 a.m. in Seattle).
+Database triggers enqueue borrow, message, and friend-request events asynchronously through
+`pg_net`; a missing sender configuration or delivery failure is logged and does not block
+the underlying database transaction. Set the optional `EXPO_ACCESS_TOKEN` Function secret
+if Expo push access-token security is enabled for the EAS project. Expo credentials and
+Supabase/Vault secrets are deployment configuration and are not stored in this repository.
+
 ## Checks
 
 ```bash
@@ -45,7 +81,7 @@ src/components/   # shared UI
 src/constants/    # theme colors
 src/lib/          # plain logic
 src/data/         # sample data used by component tests
-supabase/         # Supabase CLI config; SQL migrations go in supabase/migrations/
+supabase/         # Supabase CLI config, SQL migrations, and Edge Functions
 ```
 
 Local Supabase (`npx supabase start`) needs Docker.

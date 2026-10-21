@@ -5,6 +5,7 @@ import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-nati
 import { StatusBar } from "expo-status-bar";
 
 import { colors } from "@/constants/theme";
+import { NotificationManager } from "@/components/notification-manager";
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
 import { FriendsProvider } from "@/hooks/use-friends";
 import { LibraryProvider } from "@/hooks/use-library";
@@ -95,6 +96,7 @@ export default function RootLayout() {
           <LibraryProvider>
             <FriendsProvider>
               <StatusBar style="dark" />
+              <NotificationManager />
               <AuthGate />
             </FriendsProvider>
           </LibraryProvider>

@@ -412,6 +412,17 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      register_push_token: {
+        Args: {
+          p_expo_push_token: string;
+          p_platform: Database["public"]["Enums"]["push_platform"];
+        };
+        Returns: undefined;
+      };
+      unregister_push_token: {
+        Args: { p_expo_push_token: string };
+        Returns: undefined;
+      };
       cancel_friend_request: {
         Args: { p_request_id: string };
         Returns: Database["public"]["Enums"]["friend_request_status"];

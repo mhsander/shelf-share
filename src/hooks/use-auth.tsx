@@ -142,6 +142,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (signInError) throw signInError;
       },
       async signOut() {
+        try {
+          const { unregisterPushToken } = await import("@/lib/push-notifications");
+          await unregisterPushToken();
+        } catch (pushTokenError) {
+          console.warn("Could not unregister the push token before signing out.", pushTokenError);
+        }
         const { error: signOutError } = await requireSupabase().auth.signOut();
         if (signOutError) throw signOutError;
       },
