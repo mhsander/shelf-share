@@ -15,10 +15,12 @@ const base = {
   source: "manual",
   addedAt: "2026-10-01T12:00:00.000Z",
   lentTo: null,
+  visibility: "everyone",
+  info: null,
 } as const;
 
 const books: OwnedBook[] = [
-  { ...base, id: "1", title: "Piranesi", author: "Susanna Clarke", status: "lent", lentTo: { name: "Ben", dueDate: "2026-11-06" } },
+  { ...base, id: "1", title: "Piranesi", author: "Susanna Clarke", status: "lent", lentTo: { name: "Arturo", dueDate: "2026-11-06" } },
   { ...base, id: "2", title: "The Overstory", author: "Richard Powers", status: "available" },
   { ...base, id: "3", title: "Station Eleven", author: "Emily St. John Mandel", status: "hidden" },
 ];
@@ -38,8 +40,14 @@ describe("LibraryScreen", () => {
     expect(screen.getByText("My library")).toBeOnTheScreen();
     expect(screen.getByText("3 books")).toBeOnTheScreen();
     expect(screen.getByText("The Overstory")).toBeOnTheScreen();
-    expect(screen.getByText("to Ben · due Nov 6")).toBeOnTheScreen();
+    expect(screen.getByText("to Arturo · due Nov 6")).toBeOnTheScreen();
     expect(screen.getByText("Not shown to others")).toBeOnTheScreen();
+  });
+
+  it("marks friends-only books", async () => {
+    await renderLibrary([{ ...books[1], visibility: "friends" }]);
+
+    expect(screen.getByText("Friends only")).toBeOnTheScreen();
   });
 
   it("filters by status", async () => {

@@ -13,9 +13,10 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Avatar } from "@/components/avatar";
 import { SettingsRow } from "@/components/settings-row";
-import { links } from "@/constants/links";
 import { colors } from "@/constants/theme";
+import { links } from "@/constants/links";
 import { useAuth } from "@/hooks/use-auth";
+import { useFriends } from "@/hooks/use-friends";
 import { useLibrary } from "@/hooks/use-library";
 import { useProfile } from "@/hooks/use-profile";
 import { libraryCounts } from "@/lib/profile";
@@ -70,6 +71,7 @@ export default function ProfileScreen() {
   const { profile, blocked } = useProfile();
   const { signOut } = useAuth();
   const { books, loading: libraryLoading, error: libraryError } = useLibrary();
+  const { friends, incoming } = useFriends();
   if (!profile) {
     return (
       <SafeAreaView style={styles.safeArea}>
@@ -120,15 +122,16 @@ export default function ProfileScreen() {
 
         <SettingsGroup>
           <SettingsRow
+            label="Friends"
+            icon="people-outline"
+            detail={incoming.length > 0 ? `${incoming.length} new` : String(friends.length)}
+            onPress={() => router.push("/friends")}
+          />
+          <SettingsRow
             label="Blocked users"
             icon="ban-outline"
             detail={blocked.length > 0 ? String(blocked.length) : undefined}
             onPress={() => router.push("/blocked-users")}
-          />
-          <SettingsRow
-            label="Privacy policy"
-            icon="shield-checkmark-outline"
-            onPress={() => openLink(links.privacy)}
           />
         </SettingsGroup>
 
@@ -145,6 +148,15 @@ export default function ProfileScreen() {
             onPress={confirmDeleteAccount}
           />
         </SettingsGroup>
+        <SettingsGroup>
+          <SettingsRow label="Privacy policy" icon="document-text-outline" onPress={() => void openLink(links.privacy)} />
+          <SettingsRow label="Terms" icon="document-text-outline" onPress={() => void openLink(links.terms)} />
+        </SettingsGroup>
+        <Text style={styles.privacy}>
+          We value your trust. We do not sell, rent, trade, or share your
+          personal information with any third parties for marketing,
+          advertising, or commercial purposes.
+        </Text>
       </ScrollView>
     </SafeAreaView>
   );
@@ -213,6 +225,12 @@ const styles = StyleSheet.create({
   },
   pressed: {
     opacity: 0.7,
+  },
+  privacy: {
+    fontSize: 13,
+    lineHeight: 19,
+    color: colors.inkMuted,
+    textAlign: "center",
   },
   group: {
     borderRadius: 16,

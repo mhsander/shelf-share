@@ -1,21 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
-import {
-  createContext,
-  useContext,
-  useReducer,
-  type ReactNode,
-} from "react";
+import { createContext, useContext, useReducer, type ReactNode } from "react";
 
+import { lookupDescription } from "@/lib/book-lookup";
 import { useAuth } from "@/hooks/use-auth";
 import { libraryReducer } from "@/lib/library";
 import { queryClient } from "@/lib/query-client";
 import { requireSupabase } from "@/lib/supabase";
-import type {
-  BookDetails,
-  BookSource,
-  BookStatus,
-  OwnedBook,
-} from "@/types/book";
+import type { BookDetails, BookInfo, BookSource, BookStatus, OwnedBook } from "@/types/book";
 
 type AddResult =
   | { ok: true; book: OwnedBook }
@@ -26,7 +17,7 @@ type LibraryContextValue = {
   loading: boolean;
   error: Error | null;
   findByIsbn: (isbn: string) => OwnedBook | undefined;
-  addBook: (details: BookDetails, source: BookSource) => Promise<AddResult>;
+  addBook: (details: BookDetails, source: BookSource, info?: BookInfo | null) => Promise<AddResult>;
   updateBook: (id: string, changes: Partial<BookDetails>) => Promise<void>;
   setStatus: (id: string, status: Exclude<BookStatus, "lent">) => Promise<void>;
   removeBook: (id: string) => Promise<void>;
@@ -46,6 +37,7 @@ function mapBook(
     status: BookStatus;
     source: BookSource;
     added_at: string;
+    visibility: "public" | "friends_only";
   },
   loan?: { name: string; dueDate: string } | null,
 ): OwnedBook {
@@ -61,10 +53,12 @@ function mapBook(
     source: row.source,
     addedAt: row.added_at,
     lentTo: loan ?? null,
+    visibility: row.visibility === "friends_only" ? "friends" : "everyone",
+    info: null,
   };
 }
 
-function MockLibraryProvider({
+function LocalLibraryProvider({
   children,
   initialBooks,
 }: {
@@ -78,7 +72,7 @@ function MockLibraryProvider({
     loading: false,
     error: null,
     findByIsbn,
-    async addBook(details, source) {
+    async addBook(details, source, info = null) {
       const existing = details.isbn ? findByIsbn(details.isbn) : undefined;
       if (existing) return { ok: false, reason: "duplicate", existing };
       const book: OwnedBook = {
@@ -88,8 +82,16 @@ function MockLibraryProvider({
         source,
         addedAt: new Date().toISOString(),
         lentTo: null,
+        info: info ?? null,
       };
       dispatch({ type: "add", book });
+      // Open Library needs two more requests for the description; fetch it after saving so
+      // batch scanning isn't slowed down.
+      if (info && !info.description && details.isbn) {
+        void lookupDescription(details.isbn).then((description) => {
+          if (description) dispatch({ type: "setInfo", id: book.id, info: { ...info, description } });
+        });
+      }
       return { ok: true, book };
     },
     async updateBook(id, changes) {
@@ -116,7 +118,7 @@ function RemoteLibraryProvider({ children }: { children: ReactNode }) {
       const client = requireSupabase();
       const { data: rows, error } = await client
         .from("library_books")
-        .select("id,title,author,isbn,cover_url,personal_rating,personal_review,status,source,added_at")
+        .select("id,title,author,isbn,cover_url,personal_rating,personal_review,status,source,added_at,visibility")
         .eq("owner_id", userId!)
         .order("added_at", { ascending: false });
       if (error) throw error;
@@ -172,9 +174,10 @@ function RemoteLibraryProvider({ children }: { children: ReactNode }) {
           cover_url: details.coverUrl,
           personal_rating: details.personalRating,
           personal_review: details.personalReview,
+          visibility: details.visibility === "friends" ? "friends_only" : "public",
           source,
         })
-        .select("id,title,author,isbn,cover_url,personal_rating,personal_review,status,source,added_at")
+        .select("id,title,author,isbn,cover_url,personal_rating,personal_review,status,source,added_at,visibility")
         .single();
       if (error) {
         if (error.code === "23505") {
@@ -200,6 +203,11 @@ function RemoteLibraryProvider({ children }: { children: ReactNode }) {
           cover_url: changes.coverUrl,
           personal_rating: changes.personalRating,
           personal_review: changes.personalReview,
+          visibility: changes.visibility === undefined
+            ? undefined
+            : changes.visibility === "friends"
+              ? "friends_only"
+              : "public",
         })
         .eq("id", id);
       if (error) throw error;
@@ -234,7 +242,7 @@ export function LibraryProvider({
   initialBooks?: OwnedBook[];
 }) {
   return initialBooks
-    ? <MockLibraryProvider initialBooks={initialBooks}>{children}</MockLibraryProvider>
+    ? <LocalLibraryProvider initialBooks={initialBooks}>{children}</LocalLibraryProvider>
     : <RemoteLibraryProvider>{children}</RemoteLibraryProvider>;
 }
 

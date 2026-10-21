@@ -10,8 +10,10 @@ import { Alert } from "react-native";
 
 import ProfileScreen from "@/app/(tabs)/profile";
 import { links } from "@/constants/links";
+import { FriendsProvider } from "@/hooks/use-friends";
 import { LibraryProvider } from "@/hooks/use-library";
 import { ProfileProvider } from "@/hooks/use-profile";
+import type { FriendsState } from "@/lib/friends";
 import type { BookStatus, OwnedBook } from "@/types/book";
 import type { BlockedUser, Profile } from "@/types/profile";
 
@@ -33,7 +35,9 @@ function book(id: string, status: BookStatus): OwnedBook {
     status,
     source: "manual",
     addedAt: "2026-10-01T12:00:00.000Z",
-    lentTo: status === "lent" ? { name: "Ben", dueDate: "2026-11-06" } : null,
+    lentTo: status === "lent" ? { name: "Arturo", dueDate: "2026-11-06" } : null,
+    visibility: "everyone",
+    info: null,
   };
 }
 
@@ -50,6 +54,7 @@ const profile: Profile = {
   avatarUrl: null,
 };
 const blocked: BlockedUser[] = [{ id: "b1", displayName: "Chloe" }];
+const noFriends: FriendsState = { friends: [], incoming: [], outgoing: [] };
 
 async function renderProfile(overrides: Partial<Profile> = {}) {
   await render(
@@ -58,7 +63,9 @@ async function renderProfile(overrides: Partial<Profile> = {}) {
         initialProfile={{ ...profile, ...overrides }}
         initialBlocked={blocked}
       >
-        <ProfileScreen />
+        <FriendsProvider initialState={noFriends}>
+          <ProfileScreen />
+        </FriendsProvider>
       </ProfileProvider>
     </LibraryProvider>,
   );

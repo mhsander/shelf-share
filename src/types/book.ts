@@ -1,14 +1,34 @@
 import type { CoverColor } from "@/constants/theme";
 
+// Publication details from the ISBN lookup, saved when a book is scanned. Every field is optional
+// because Open Library and Google Books records are often incomplete.
+export type BookInfo = {
+  description: string | null;
+  publisher: string | null;
+  publishedYear: number | null;
+  pageCount: number | null;
+  subjects: string[];
+};
+
+// Mirrors the `book_visibility` enum in Postgres.
+export type BookVisibility = "everyone" | "friends";
+
 // A book another user has listed as available, as shown in search results.
 export type ListedBook = {
   id: string;
   title: string;
   author: string;
+  ownerId: string;
   ownerName: string;
   neighborhood: string;
+  // Number may be unavailable when the query returns only the current book.
+  ownerBookCount?: number;
   coverColor: CoverColor;
-  ownerId?: string;
+  visibility?: BookVisibility;
+  // The owner's note, shown on the book detail screen.
+  personalRating?: number | null;
+  personalReview?: string | null;
+  info?: BookInfo | null;
   coverUrl?: string | null;
 };
 
@@ -30,7 +50,11 @@ export type OwnedBook = {
   addedAt: string;
   // From the book's `lent` borrow request; null unless status is `lent`.
   lentTo: { name: string; dueDate: string } | null;
+  // Friends-only visibility is enforced by Postgres RLS.
+  visibility: BookVisibility;
+  // Null for books typed in by hand or saved before the lookup returned.
+  info: BookInfo | null;
 };
 
 // The fields a user can type or edit in the add/edit form.
-export type BookDetails = Pick<OwnedBook, "title" | "author" | "isbn" | "coverUrl" | "personalRating" | "personalReview">;
+export type BookDetails = Pick<OwnedBook, "title" | "author" | "isbn" | "coverUrl" | "personalRating" | "personalReview" | "visibility">;

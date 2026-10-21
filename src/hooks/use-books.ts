@@ -23,7 +23,7 @@ export function useSearchBooks(search: string, city: string | null) {
       let request = client
         .from("library_books")
         .select(
-          "id,owner_id,title,author,cover_url,profiles!library_books_owner_id_fkey(display_name,city,neighborhood)",
+          "id,owner_id,title,author,cover_url,visibility,profiles!library_books_owner_id_fkey(display_name,city,neighborhood)",
         )
         .eq("status", "available")
         .neq("owner_id", userId!);
@@ -48,6 +48,10 @@ export function useSearchBooks(search: string, city: string | null) {
           neighborhood: owner.neighborhood ?? owner.city,
           coverColor: coverColor(row.id),
           coverUrl: row.cover_url,
+          visibility: row.visibility === "friends_only" ? "friends" : "everyone",
+          personalRating: null,
+          personalReview: null,
+          info: null,
         }];
       });
     },

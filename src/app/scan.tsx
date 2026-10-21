@@ -54,7 +54,14 @@ export default function ScanScreen() {
       const prefill = result.prefill;
       router.push({
         pathname: "/add-book",
-        params: { isbn, title: prefill?.title ?? "", author: prefill?.author ?? "", coverUrl: prefill?.coverUrl ?? "", source: "scan" },
+        params: {
+          isbn,
+          title: prefill?.title ?? "",
+          author: prefill?.author ?? "",
+          coverUrl: prefill?.coverUrl ?? "",
+          info: prefill ? JSON.stringify(prefill.info) : "",
+          source: "scan",
+        },
       });
     }
   }
@@ -74,9 +81,11 @@ export default function ScanScreen() {
 
   async function addFound(isbn: string, book: BookMetadata) {
     try {
+      const { info, ...details } = book;
       const result = await addBook(
-        { ...book, isbn, personalRating: null, personalReview: null },
+        { ...details, isbn, personalRating: null, personalReview: null, visibility: "everyone" },
         "scan",
+        info,
       );
       if (!result.ok) {
         setSheet({ kind: "duplicate", isbn, existing: result.existing });
@@ -95,7 +104,14 @@ export default function ScanScreen() {
     closeSheet(isbn);
     router.push({
       pathname: "/add-book",
-      params: { isbn, title: book.title, author: book.author, coverUrl: book.coverUrl ?? "", source: "scan" },
+      params: {
+        isbn,
+        title: book.title,
+        author: book.author,
+        coverUrl: book.coverUrl ?? "",
+        info: JSON.stringify(book.info),
+        source: "scan",
+      },
     });
   }
 

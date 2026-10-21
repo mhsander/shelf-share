@@ -13,7 +13,9 @@ function book(id: string, status: BookStatus): OwnedBook {
     status,
     source: "manual",
     addedAt: "2026-10-01T12:00:00.000Z",
-    lentTo: status === "lent" ? { name: "Ben", dueDate: "2026-11-06" } : null,
+    lentTo: status === "lent" ? { name: "Arturo", dueDate: "2026-11-06" } : null,
+    visibility: "everyone",
+    info: null,
   };
 }
 

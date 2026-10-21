@@ -6,6 +6,7 @@ import { StatusBar } from "expo-status-bar";
 
 import { colors } from "@/constants/theme";
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
+import { FriendsProvider } from "@/hooks/use-friends";
 import { LibraryProvider } from "@/hooks/use-library";
 import { ProfileProvider, useProfile } from "@/hooks/use-profile";
 import { queryClient } from "@/lib/query-client";
@@ -79,6 +80,8 @@ function AuthGate() {
       <Stack.Screen name="blocked-users" />
       <Stack.Screen name="books/[id]" />
       <Stack.Screen name="users/[id]" />
+      <Stack.Screen name="friends" />
+      <Stack.Screen name="invite/[code]" options={{ presentation: "modal" }} />
     </Stack>
   );
 }
@@ -89,8 +92,10 @@ export default function RootLayout() {
       <AuthProvider>
         <ProfileProvider>
           <LibraryProvider>
-            <StatusBar style="dark" />
-            <AuthGate />
+            <FriendsProvider>
+              <StatusBar style="dark" />
+              <AuthGate />
+            </FriendsProvider>
           </LibraryProvider>
         </ProfileProvider>
       </AuthProvider>

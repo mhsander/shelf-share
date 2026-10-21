@@ -8,7 +8,7 @@ import { LibraryRow } from "@/components/library-row";
 import { SegmentedControl } from "@/components/segmented-control";
 import { colors } from "@/constants/theme";
 import { useLibrary } from "@/hooks/use-library";
-import { filterByStatus, type StatusFilter } from "@/lib/library";
+import { filterByStatus, isFriendsOnly, type StatusFilter } from "@/lib/library";
 import type { OwnedBook } from "@/types/book";
 
 const filters: { value: StatusFilter; label: string }[] = [
@@ -85,7 +85,9 @@ export default function LibraryScreen() {
       <FlatList
         data={visible}
         keyExtractor={(book) => book.id}
-        renderItem={({ item }) => <LibraryRow book={item} onMenu={() => openMenu(item)} />}
+        renderItem={({ item }) => (
+          <LibraryRow book={item} friendsOnly={isFriendsOnly(item, false)} onMenu={() => openMenu(item)} />
+        )}
         contentContainerStyle={styles.content}
         ListHeaderComponent={
           <View style={styles.header}>

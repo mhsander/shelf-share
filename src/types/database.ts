@@ -435,6 +435,7 @@ export type Database = {
         Args: { p_request_id: string };
         Returns: Database["public"]["Enums"]["request_status"];
       };
+      remove_friend: { Args: { p_friend_id: string }; Returns: undefined };
       request_book: { Args: { p_book_id: string }; Returns: string };
       respond_to_friend_request: {
         Args: { p_request_id: string; p_response: string };

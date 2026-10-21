@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(22);
+select plan(25);
 
 insert into auth.users (id, email) values
   ('aaaaaaaa-0000-0000-0000-000000000000', 'a@example.test'),
@@ -118,6 +118,19 @@ select is(
   'decline updates friend request state'
 );
 select is((select count(*)::int from public.friendships), 1, 'declined request creates no friendship');
+
+select set_config('request.jwt.claims', '{"sub":"bbbbbbbb-0000-0000-0000-000000000000","role":"authenticated"}', true);
+set local role authenticated;
+select lives_ok(
+  $$select public.remove_friend('aaaaaaaa-0000-0000-0000-000000000000')$$,
+  'either friend can end a friendship'
+);
+reset role;
+select is((select count(*)::int from public.friendships), 0, 'ending a friendship removes the relationship');
+select set_config('request.jwt.claims', '{"sub":"bbbbbbbb-0000-0000-0000-000000000000","role":"authenticated"}', true);
+set local role authenticated;
+select is((select count(*)::int from public.library_books where title = 'Private book'), 0, 'former friend can no longer see friends-only books');
+reset role;
 
 insert into public.blocks (blocker_id, blocked_id)
 values ('aaaaaaaa-0000-0000-0000-000000000000', 'bbbbbbbb-0000-0000-0000-000000000000');

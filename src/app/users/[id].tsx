@@ -15,7 +15,7 @@ export default function UserProfileScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { session } = useAuth();
   const { data: profile, isLoading, error } = usePublicProfile(id);
-  const { friends, requests, sendFriendRequest, respondToFriendRequest, cancelFriendRequest } = useFriends();
+  const { friends, requests, sendRequest, accept, decline, cancelRequest } = useFriends();
   const [savingFriend, setSavingFriend] = useState(false);
 
   if (isLoading) return <MessageScreen message="Loading profile…" />;
@@ -25,9 +25,7 @@ export default function UserProfileScreen() {
   const location = [profile.neighborhood, profile.city].filter(Boolean).join(" · ");
   const isSelf = profile.id === session?.user.id;
   const friend = friends.some((item) => item.id === profile.id);
-  const request = requests.find(
-    (item) => item.senderId === profile.id || item.recipientId === profile.id,
-  );
+  const request = requests.find((item) => item.senderId === profile.id || item.recipientId === profile.id);
 
   async function runFriendAction(action: () => Promise<void>) {
     setSavingFriend(true);
@@ -76,13 +74,13 @@ export default function UserProfileScreen() {
                       <FriendButton
                         label="Accept request"
                         disabled={savingFriend}
-                        onPress={() => void runFriendAction(() => respondToFriendRequest(request.id, "accepted"))}
+                        onPress={() => void runFriendAction(() => accept(profile.id))}
                       />
                       <FriendButton
                         label="Decline"
                         disabled={savingFriend}
                         secondary
-                        onPress={() => void runFriendAction(() => respondToFriendRequest(request.id, "declined"))}
+                        onPress={() => void runFriendAction(() => decline(profile.id))}
                       />
                     </>
                   ) : request ? (
@@ -92,14 +90,14 @@ export default function UserProfileScreen() {
                         label="Cancel request"
                         disabled={savingFriend}
                         secondary
-                        onPress={() => void runFriendAction(() => cancelFriendRequest(request.id))}
+                        onPress={() => void runFriendAction(() => cancelRequest(profile.id))}
                       />
                     </>
                   ) : (
                     <FriendButton
                       label="Add friend"
                       disabled={savingFriend}
-                      onPress={() => void runFriendAction(() => sendFriendRequest(profile.id))}
+                      onPress={() => void runFriendAction(() => sendRequest(profile))}
                     />
                   )}
                 </View>

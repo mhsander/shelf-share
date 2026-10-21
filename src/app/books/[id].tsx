@@ -91,6 +91,7 @@ export default function BookDetailScreen() {
           <Text style={styles.author}>{book.author}</Text>
           <Pressable
             accessibilityRole="button"
+            accessibilityLabel={`${book.owner.displayName}'s profile`}
             onPress={() => router.push({ pathname: "/users/[id]", params: { id: book.ownerId } })}
             style={styles.ownerCard}
           >

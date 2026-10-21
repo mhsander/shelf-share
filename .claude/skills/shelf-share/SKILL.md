@@ -21,10 +21,13 @@ via an Edge Function · `papaparse` on the device · SQL migrations in `supabase
 generated TS types.
 
 ## Hard rules
-- **V1 scope only.** Don't build V2 items: friends, contact lookup, distance search, borrower
-  ratings, chat outside a borrow request (spec §2).
+- **V1 scope only.** Don't build V2 items: distance search, borrower ratings, chat outside a
+  borrow request (spec §2). Friends and friends-only visibility moved into V1 on 2026-10-19
+  (spec §6.9); contacts matching is V1 but blocked on open question §13.5.
 - **Never use the Goodreads API.** Import from the user's exported CSV instead (spec §6.3).
 - **Email is never stored in `public` tables or shown to other users.** Neither is exact location.
+- **Friendships change only through the friend RPCs** (spec §7.1), and friends-only visibility is
+  enforced by RLS on `library_books` (spec §8), not only by client filtering.
 - **Borrow-request transitions are enforced in Postgres**, via security-definer RPCs
   (`request_book`, `respond_to_request`, `cancel_request`, `mark_lent`, `mark_returned`), not only
   in the app. Any transition not in spec §7 is rejected.
@@ -40,7 +43,8 @@ columns and `="…"` ISBN quirk, Open Library and Google Books rate limits.
 
 ## Open questions (spec §13; defaults in place)
 Launch community (free-text city now) · default due date 3 weeks · who reviews reports ·
-whether Facebook Login ships in V1.
+whether Facebook Login ships in V1 · contacts matching (phone numbers + SMS cost) · invite-link
+web domain.
 
 ## Repo conventions
 - Routes only in `src/app/`; tests live beside the code they cover, or in `src/__tests__/` for
