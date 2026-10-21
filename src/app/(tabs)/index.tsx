@@ -6,15 +6,14 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { BookCard } from "@/components/book-card";
 import { FilterChip } from "@/components/filter-chip";
 import { colors } from "@/constants/theme";
-import { sampleBooks } from "@/data/sample-books";
-import { filterBooks } from "@/lib/filter-books";
-
-// TODO: replace with the signed-in user's profile city.
-const userCity = "Seattle";
+import { useProfile } from "@/hooks/use-profile";
+import { useSearchBooks } from "@/hooks/use-books";
 
 export default function SearchScreen() {
   const [query, setQuery] = useState("");
-  const books = filterBooks(sampleBooks, query);
+  const { profile } = useProfile();
+  const { data: books = [], isLoading, error } = useSearchBooks(query, profile?.city ?? null);
+  const userCity = profile?.city ?? "Your city";
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top"]}>
@@ -60,7 +59,15 @@ export default function SearchScreen() {
             </View>
           </View>
         }
-        ListEmptyComponent={<Text style={styles.empty}>No books match your search yet.</Text>}
+        ListEmptyComponent={
+          <Text style={styles.empty}>
+            {isLoading
+              ? "Loading books…"
+              : error
+                ? "Could not load books. Please try again."
+                : "No books match your search yet."}
+          </Text>
+        }
       />
     </SafeAreaView>
   );

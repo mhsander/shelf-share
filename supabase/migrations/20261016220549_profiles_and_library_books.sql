@@ -1,0 +1,1 @@
+-- Schema and access rules are introduced by the following migration.

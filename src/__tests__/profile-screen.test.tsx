@@ -17,6 +17,7 @@ import type { BlockedUser, Profile } from "@/types/profile";
 
 jest.mock("expo-router", () => ({ router: { push: jest.fn() } }));
 jest.mock("expo-web-browser", () => ({ openBrowserAsync: jest.fn() }));
+jest.mock("@/hooks/use-auth", () => ({ useAuth: () => ({ signOut: jest.fn() }) }));
 
 const mockOpen = openBrowserAsync as jest.Mock;
 

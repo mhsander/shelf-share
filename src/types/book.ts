@@ -8,6 +8,8 @@ export type ListedBook = {
   ownerName: string;
   neighborhood: string;
   coverColor: CoverColor;
+  ownerId?: string;
+  coverUrl?: string | null;
 };
 
 // Mirrors the `book_status` and `book_source` enums in Postgres.

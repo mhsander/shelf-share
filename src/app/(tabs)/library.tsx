@@ -44,7 +44,7 @@ function ActionTile({ icon, label, primary = false, disabled = false, onPress }:
 }
 
 export default function LibraryScreen() {
-  const { books, setStatus, removeBook } = useLibrary();
+  const { books, setStatus, removeBook, loading, error } = useLibrary();
   const [filter, setFilter] = useState<StatusFilter>("all");
   const visible = filterByStatus(books, filter);
 
@@ -59,18 +59,25 @@ export default function LibraryScreen() {
 
     const toggle =
       book.status === "hidden"
-        ? { text: "Show to others", onPress: () => setStatus(book.id, "available") }
-        : { text: "Hide from others", onPress: () => setStatus(book.id, "hidden") };
+        ? { text: "Show to others", onPress: () => void setStatus(book.id, "available").catch(showDatabaseError) }
+        : { text: "Hide from others", onPress: () => void setStatus(book.id, "hidden").catch(showDatabaseError) };
     const remove = {
       text: "Remove from library",
       style: "destructive" as const,
       onPress: () =>
         Alert.alert("Remove this book?", `"${book.title}" will be deleted from your library.`, [
           cancel,
-          { text: "Remove", style: "destructive", onPress: () => removeBook(book.id) },
+          { text: "Remove", style: "destructive", onPress: () => void removeBook(book.id).catch(showDatabaseError) },
         ]),
     };
     Alert.alert(book.title, undefined, [edit, toggle, remove, cancel]);
+  }
+
+  function showDatabaseError(error: unknown) {
+    Alert.alert(
+      "Couldn't update your library",
+      error instanceof Error ? error.message : "Please try again.",
+    );
   }
 
   return (
@@ -101,7 +108,13 @@ export default function LibraryScreen() {
         }
         ListEmptyComponent={
           <Text style={styles.empty}>
-            {filter === "all" ? "No books yet. Scan one to get started." : `No ${filter} books.`}
+            {loading
+              ? "Loading your library…"
+              : error
+                ? "Could not load your library. Please try again."
+                : filter === "all"
+                  ? "No books yet. Scan one to get started."
+                  : `No ${filter} books.`}
           </Text>
         }
       />

@@ -14,7 +14,15 @@ export default function BlockedUsersScreen() {
   function confirmUnblock(user: BlockedUser) {
     Alert.alert(`Unblock ${user.displayName}?`, "They'll be able to see your profile and books again.", [
       { text: "Cancel", style: "cancel" },
-      { text: "Unblock", onPress: () => unblock(user.id) },
+      {
+        text: "Unblock",
+        onPress: () => void unblock(user.id).catch((error) =>
+          Alert.alert(
+            "Couldn't unblock this user",
+            error instanceof Error ? error.message : "Please try again.",
+          ),
+        ),
+      },
     ]);
   }
 

@@ -2,7 +2,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { CameraView, useCameraPermissions, type BarcodeScanningResult } from "expo-camera";
 import { router, useIsFocused } from "expo-router";
 import { useRef, useState } from "react";
-import { ActivityIndicator, Linking, Pressable, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Linking, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { BookCover, coverColorFor } from "@/components/book-cover";
@@ -72,9 +72,23 @@ export default function ScanScreen() {
     void lookUp(data);
   }
 
-  function addFound(isbn: string, book: BookMetadata) {
-    addBook({ ...book, isbn, personalRating: null, personalReview: null }, "scan");
-    closeSheet(isbn);
+  async function addFound(isbn: string, book: BookMetadata) {
+    try {
+      const result = await addBook(
+        { ...book, isbn, personalRating: null, personalReview: null },
+        "scan",
+      );
+      if (!result.ok) {
+        setSheet({ kind: "duplicate", isbn, existing: result.existing });
+        return;
+      }
+      closeSheet(isbn);
+    } catch (error) {
+      Alert.alert(
+        "Couldn't add this book",
+        error instanceof Error ? error.message : "Please try again.",
+      );
+    }
   }
 
   function editFound(isbn: string, book: BookMetadata) {
@@ -184,7 +198,7 @@ export default function ScanScreen() {
                 <Pressable accessibilityRole="button" onPress={() => closeSheet(sheet.isbn)} style={styles.secondaryButton}>
                   <Text style={styles.secondaryLabel}>Skip</Text>
                 </Pressable>
-                <Pressable accessibilityRole="button" onPress={() => addFound(sheet.isbn, sheet.book)} style={[styles.primaryButton, styles.grow]}>
+                <Pressable accessibilityRole="button"                 onPress={() => void addFound(sheet.isbn, sheet.book)} style={[styles.primaryButton, styles.grow]}>
                   <Text style={styles.primaryLabel}>Add & scan next</Text>
                 </Pressable>
               </View>

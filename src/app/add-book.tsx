@@ -1,7 +1,7 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { BookCover } from "@/components/book-cover";
@@ -39,7 +39,7 @@ export default function AddBookScreen() {
   const [errors, setErrors] = useState<Errors>({});
   const coverUrl = editing?.coverUrl ?? (params.coverUrl || null);
 
-  function save() {
+  async function save() {
     const next: Errors = {};
     const normalizedIsbn = isbn.trim() ? normalizeIsbn(isbn) : null;
 
@@ -63,9 +63,23 @@ export default function AddBookScreen() {
       personalReview: review.trim() || null,
     };
 
-    if (editing) updateBook(editing.id, details);
-    else addBook(details, params.source ?? "manual");
-    router.back();
+    try {
+      if (editing) {
+        await updateBook(editing.id, details);
+      } else {
+        const result = await addBook(details, params.source ?? "manual");
+        if (!result.ok) {
+          setErrors((current) => ({ ...current, isbn: "Already in your library." }));
+          return;
+        }
+      }
+      router.back();
+    } catch (error) {
+      Alert.alert(
+        "Couldn't save the book",
+        error instanceof Error ? error.message : "Please try again.",
+      );
+    }
   }
 
   return (
@@ -119,7 +133,7 @@ export default function AddBookScreen() {
         <View style={styles.footer}>
           <Pressable
             accessibilityRole="button"
-            onPress={save}
+            onPress={() => void save()}
             style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]}
           >
             <Text style={styles.primaryLabel}>{editing ? "Save changes" : "Add to library"}</Text>
