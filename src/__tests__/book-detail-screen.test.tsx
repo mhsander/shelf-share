@@ -4,7 +4,11 @@ import { router, useLocalSearchParams } from "expo-router";
 import BookDetailScreen from "@/app/books/[id]";
 import { BookCard } from "@/components/book-card";
 import { useBookDetails } from "@/hooks/use-books";
+import { invalidateBorrowRequests } from "@/hooks/use-requests";
 import { requireSupabase } from "@/lib/supabase";
+
+const mockRpc = jest.fn();
+const mockInsert = jest.fn();
 
 jest.mock("expo-router", () => ({
   router: { back: jest.fn(), push: jest.fn() },
@@ -21,6 +25,9 @@ jest.mock("@/lib/supabase", () => ({
 }));
 jest.mock("@/lib/query-client", () => ({
   queryClient: { invalidateQueries: jest.fn() },
+}));
+jest.mock("@/hooks/use-requests", () => ({
+  invalidateBorrowRequests: jest.fn(),
 }));
 
 const book = {
@@ -45,9 +52,11 @@ beforeEach(() => {
   (useLocalSearchParams as jest.Mock).mockReturnValue({ id: book.id });
   (useBookDetails as jest.Mock).mockReturnValue({ data: book, isLoading: false, error: null });
   (requireSupabase as jest.Mock).mockReturnValue({
-    rpc: jest.fn().mockResolvedValue({ data: "request-id", error: null }),
-    from: jest.fn(() => ({ insert: jest.fn().mockResolvedValue({ error: null }) })),
+    rpc: mockRpc,
+    from: jest.fn(() => ({ insert: mockInsert })),
   });
+  mockRpc.mockResolvedValue({ data: "request-id", error: null });
+  mockInsert.mockResolvedValue({ error: null });
 });
 
 describe("BookDetailScreen", () => {
@@ -73,6 +82,27 @@ describe("BookDetailScreen", () => {
     await render(<BookDetailScreen />);
     await fireEvent.press(screen.getByRole("button", { name: "Ben's profile" }));
     expect(router.push).toHaveBeenCalledWith({ pathname: "/users/[id]", params: { id: book.ownerId } });
+  });
+
+  it("creates a request, adds the optional first message, and opens its thread", async () => {
+    await render(<BookDetailScreen />);
+    await fireEvent.changeText(
+      screen.getByPlaceholderText("Hi! Could I borrow this?"),
+      "Could I pick it up this weekend?",
+    );
+    await fireEvent.press(screen.getByRole("button", { name: "Ask to borrow" }));
+
+    expect(mockRpc).toHaveBeenCalledWith("request_book", { p_book_id: book.id });
+    expect(mockInsert).toHaveBeenCalledWith({
+      request_id: "request-id",
+      sender_id: "borrower-id",
+      body: "Could I pick it up this weekend?",
+    });
+    expect(invalidateBorrowRequests).toHaveBeenCalled();
+    expect(router.push).toHaveBeenCalledWith({
+      pathname: "/requests/[id]",
+      params: { id: "request-id" },
+    });
   });
 
   it("opens the book detail route from a search card", async () => {

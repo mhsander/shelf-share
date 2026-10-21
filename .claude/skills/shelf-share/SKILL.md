@@ -47,6 +47,8 @@ whether Facebook Login ships in V1 · contacts matching (phone numbers + SMS cos
 web domain.
 
 ## Repo conventions
+- Before starting a new feature branch, fetch and pull the latest `main`, then branch from that
+  updated base. Do not rebase or reset an existing feature branch unless explicitly requested.
 - Routes only in `src/app/`; tests live beside the code they cover, or in `src/__tests__/` for
   screens (a test file inside `src/app/` would become a route).
 - Add packages with `npx expo install <pkg>` so versions match the Expo SDK.
