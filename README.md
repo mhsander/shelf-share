@@ -23,6 +23,11 @@ anon) key. Do not put a service-role key in the app. Enable Google and Apple pro
 Supabase Auth. Google additionally needs web and iOS OAuth client IDs; set the IDs in the
 matching `EXPO_PUBLIC_GOOGLE_*_CLIENT_ID` variables. Set `GOOGLE_IOS_URL_SCHEME` to the
 reversed iOS client ID so the Google config plugin can register the native callback URL.
+For Android, create an Android OAuth client in Google Cloud using the package ID in
+`app.json` and the SHA-1 fingerprint of the certificate that signs the Android build. EAS
+signing credentials can be viewed or downloaded with `npx eas-cli@latest credentials`;
+keep the keystore private. If distributing through Google Play later, also register the
+Play app-signing certificate's SHA-1.
 
 Google Sign-In uses native code and requires a development build; it is not available in
 Expo Go. Apple Sign-In appears on supported iOS devices. After changing native configuration,

@@ -8,10 +8,13 @@
     "scheme": "shelfshare",
     "userInterfaceStyle": "light",
     "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.martola.shelfshare", // <-- ADDED THIS
       "icon": "./assets/expo.icon",
       "usesAppleSignIn": true
     },
     "android": {
+      "package": "com.martola.shelfshare",
       "adaptiveIcon": {
         "backgroundColor": "#F4F4F0",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -42,11 +45,27 @@
         }
       ],
       "expo-notifications",
-      "expo-apple-authentication"
+      "expo-apple-authentication",
+      [
+        "@react-native-google-signin/google-signin", // <-- ADDED IF USING GOOGLE SIGNIN
+        {
+          "iosUrlScheme": "com.googleusercontent.apps.YOUR-IOS-CLIENT-ID-PREFIX"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {
+        "asyncRoutes": {
+          "web": true
+        }
+      },
+      "eas": {
+        "projectId": "0579a216-b940-4ea4-9cc6-275261dda00d"
+      }
     }
   }
 }
