@@ -8,6 +8,8 @@
     "scheme": "shelfshare",
     "userInterfaceStyle": "light",
     "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.martola.shelfshare", // <-- ADDED THIS
       "icon": "./assets/expo.icon",
       "usesAppleSignIn": true
     },
@@ -43,7 +45,13 @@
         }
       ],
       "expo-notifications",
-      "expo-apple-authentication"
+      "expo-apple-authentication",
+      [
+        "@react-native-google-signin/google-signin", // <-- ADDED IF USING GOOGLE SIGNIN
+        {
+          "iosUrlScheme": "com.googleusercontent.apps.YOUR-IOS-CLIENT-ID-PREFIX"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
