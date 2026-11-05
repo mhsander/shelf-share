@@ -18,28 +18,31 @@ function AuthGate() {
   const { profile, loading: profileLoading, error: profileError } = useProfile();
   const inSignIn = segments[0] === "sign-in";
   const inProfileSetup = segments[0] === "profile-setup";
+  // Legal pages are readable before sign-in and during profile setup.
+  const inLegal = segments[0] === "privacy" || segments[0] === "terms";
   const redirecting =
     !loading &&
     ((!configured || !session)
-      ? !inSignIn
+      ? !inSignIn && !inLegal
       : !profileLoading &&
-        (profile ? inSignIn || inProfileSetup : !profileError && !inProfileSetup));
+        (profile ? inSignIn || inProfileSetup : !profileError && !inProfileSetup && !inLegal));
 
   useEffect(() => {
     if (loading) return;
     if (!configured || !session) {
-      if (!inSignIn) router.replace("/sign-in");
+      if (!inSignIn && !inLegal) router.replace("/sign-in");
       return;
     }
     if (profileLoading) return;
     if (profileError) return;
     if (!profile) {
-      if (!inProfileSetup) router.replace("/profile-setup");
+      if (!inProfileSetup && !inLegal) router.replace("/profile-setup");
       return;
     }
     if (inSignIn || inProfileSetup) router.replace("/(tabs)");
   }, [
     configured,
+    inLegal,
     inProfileSetup,
     inSignIn,
     loading,
@@ -85,6 +88,8 @@ function AuthGate() {
       <Stack.Screen name="report/[userId]" options={{ presentation: "modal" }} />
       <Stack.Screen name="friends" />
       <Stack.Screen name="invite/[code]" options={{ presentation: "modal" }} />
+      <Stack.Screen name="privacy" />
+      <Stack.Screen name="terms" />
     </Stack>
   );
 }

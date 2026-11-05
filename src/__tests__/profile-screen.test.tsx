@@ -5,11 +5,9 @@ import {
   waitFor,
 } from "@testing-library/react-native";
 import { router } from "expo-router";
-import { openBrowserAsync } from "expo-web-browser";
 import { Alert } from "react-native";
 
 import ProfileScreen from "@/app/(tabs)/profile";
-import { links } from "@/constants/links";
 import { FriendsProvider } from "@/hooks/use-friends";
 import { LibraryProvider } from "@/hooks/use-library";
 import { ProfileProvider } from "@/hooks/use-profile";
@@ -18,14 +16,11 @@ import type { BookStatus, OwnedBook } from "@/types/book";
 import type { BlockedUser, Profile } from "@/types/profile";
 
 jest.mock("expo-router", () => ({ router: { push: jest.fn() } }));
-jest.mock("expo-web-browser", () => ({ openBrowserAsync: jest.fn() }));
 const mockSignOut = jest.fn();
 const mockDeleteAccount = jest.fn();
 jest.mock("@/hooks/use-auth", () => ({
   useAuth: () => ({ signOut: mockSignOut, deleteAccount: mockDeleteAccount }),
 }));
-
-const mockOpen = openBrowserAsync as jest.Mock;
 
 function book(id: string, status: BookStatus): OwnedBook {
   return {
@@ -90,7 +85,6 @@ beforeEach(() => {
   mockSignOut.mockResolvedValue(undefined);
   mockDeleteAccount.mockResolvedValue(undefined);
   jest.spyOn(Alert, "alert").mockImplementation(() => {});
-  mockOpen.mockResolvedValue({ type: "opened" });
 });
 
 describe("ProfileScreen", () => {
@@ -134,20 +128,10 @@ describe("ProfileScreen", () => {
     await fireEvent.press(
       screen.getByRole("button", { name: "Privacy policy" }),
     );
-    expect(mockOpen).toHaveBeenCalledWith(links.privacy);
-  });
+    expect(router.push).toHaveBeenCalledWith("/privacy");
 
-  it("reports a link that fails to open", async () => {
-    mockOpen.mockRejectedValue(new Error("no browser"));
-    await renderProfile();
-
-    await fireEvent.press(
-      screen.getByRole("button", { name: "Privacy policy" }),
-    );
-
-    await waitFor(() =>
-      expect(Alert.alert).toHaveBeenCalledWith("Couldn't open the page."),
-    );
+    await fireEvent.press(screen.getByRole("button", { name: "Terms" }));
+    expect(router.push).toHaveBeenCalledWith("/terms");
   });
 
   it("asks before signing out", async () => {

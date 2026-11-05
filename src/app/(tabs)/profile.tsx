@@ -1,5 +1,4 @@
 import { router } from "expo-router";
-import { openBrowserAsync } from "expo-web-browser";
 import { Children, type ReactNode } from "react";
 import {
   Alert,
@@ -14,20 +13,11 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Avatar } from "@/components/avatar";
 import { SettingsRow } from "@/components/settings-row";
 import { colors } from "@/constants/theme";
-import { links } from "@/constants/links";
 import { useAuth } from "@/hooks/use-auth";
 import { useFriends } from "@/hooks/use-friends";
 import { useLibrary } from "@/hooks/use-library";
 import { useProfile } from "@/hooks/use-profile";
 import { libraryCounts } from "@/lib/profile";
-
-async function openLink(url: string) {
-  try {
-    await openBrowserAsync(url);
-  } catch {
-    Alert.alert("Couldn't open the page.");
-  }
-}
 
 function confirmSignOut(signOut: () => Promise<void>) {
   Alert.alert("Sign out?", undefined, [
@@ -157,8 +147,8 @@ export default function ProfileScreen() {
           />
         </SettingsGroup>
         <SettingsGroup>
-          <SettingsRow label="Privacy policy" icon="document-text-outline" onPress={() => void openLink(links.privacy)} />
-          <SettingsRow label="Terms" icon="document-text-outline" onPress={() => void openLink(links.terms)} />
+          <SettingsRow label="Privacy policy" icon="document-text-outline" onPress={() => router.push("/privacy")} />
+          <SettingsRow label="Terms" icon="document-text-outline" onPress={() => router.push("/terms")} />
         </SettingsGroup>
         <Text style={styles.privacy}>
           We value your trust. We do not sell, rent, trade, or share your
