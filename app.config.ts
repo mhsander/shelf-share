@@ -2,11 +2,13 @@ import type { ConfigContext, ExpoConfig } from "expo/config";
 
 export default ({ config }: ConfigContext): ExpoConfig => {
   const googleIosUrlScheme = process.env.GOOGLE_IOS_URL_SCHEME;
-  const plugins = (config.plugins ?? []).filter(
-    (plugin) =>
-      plugin !== "@react-native-google-signin/google-signin" &&
-      plugin !== "expo-apple-authentication",
-  );
+  const plugins = (config.plugins ?? []).filter((plugin) => {
+    const name = Array.isArray(plugin) ? plugin[0] : plugin;
+    return (
+      name !== "@react-native-google-signin/google-signin" &&
+      name !== "expo-apple-authentication"
+    );
+  });
 
   if (googleIosUrlScheme) {
     plugins.push([

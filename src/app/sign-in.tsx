@@ -1,10 +1,9 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import * as AppleAuthentication from "expo-apple-authentication";
-import { openBrowserAsync } from "expo-web-browser";
+import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   Platform,
   Pressable,
   ScrollView,
@@ -16,7 +15,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { colors } from "@/constants/theme";
 import { isGoogleSignInCancellation, useAuth } from "@/hooks/use-auth";
-import { links } from "@/constants/links";
 
 export default function SignInScreen() {
   const { configured, error: authError, signInWithGoogle, signInWithApple } = useAuth();
@@ -106,25 +104,17 @@ export default function SignInScreen() {
         </View>
 
         <View style={styles.legal}>
-          <Pressable onPress={() => void openLegalPage(links.privacy)}>
+          <Pressable accessibilityRole="link" onPress={() => router.push("/privacy")}>
             <Text style={styles.legalLink}>Privacy policy</Text>
           </Pressable>
           <Text style={styles.legalDot}>·</Text>
-          <Pressable onPress={() => void openLegalPage(links.terms)}>
+          <Pressable accessibilityRole="link" onPress={() => router.push("/terms")}>
             <Text style={styles.legalLink}>Terms</Text>
           </Pressable>
         </View>
       </ScrollView>
     </SafeAreaView>
   );
-}
-
-async function openLegalPage(url: string) {
-  try {
-    await openBrowserAsync(url);
-  } catch {
-    Alert.alert("Couldn't open the page.");
-  }
 }
 
 function isAppleCancellation(error: unknown) {
