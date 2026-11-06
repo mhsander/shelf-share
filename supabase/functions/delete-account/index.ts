@@ -1,7 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const corsHeaders = {
-  "Access-Control-Allow-Headers": "authorization, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Allow-Origin": "*",
 };
@@ -26,6 +26,10 @@ Deno.serve(async (request) => {
   if (!accessToken) {
     return jsonResponse({ error: "Authentication required" }, 401);
   }
+  const apiKey = request.headers.get("apikey");
+  if (!apiKey) {
+    return jsonResponse({ error: "Supabase API key required" }, 401);
+  }
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -42,7 +46,11 @@ Deno.serve(async (request) => {
     return jsonResponse({ error: "Your session is invalid or expired. Sign in and try again." }, 401);
   }
 
-  const { data: profile, error: profileError } = await admin
+  const userClient = createClient(supabaseUrl, apiKey, {
+    global: { headers: { Authorization: authorization } },
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+  const { data: profile, error: profileError } = await userClient
     .from("profiles")
     .select("avatar_path")
     .eq("id", userResult.user.id)
