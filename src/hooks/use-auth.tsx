@@ -14,6 +14,7 @@ import {
 import { Platform } from "react-native";
 
 import { queryClient } from "@/lib/query-client";
+import { unregisterPushToken } from "@/lib/push-notifications";
 import { isSupabaseConfigured, requireSupabase } from "@/lib/supabase";
 
 type AuthContextValue = {
@@ -147,7 +148,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
       async signOut() {
         try {
-          const { unregisterPushToken } = await import("@/lib/push-notifications");
           await unregisterPushToken();
         } catch (pushTokenError) {
           console.warn("Could not unregister the push token before signing out.", pushTokenError);
