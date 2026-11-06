@@ -3,6 +3,7 @@ import { Children, type ReactNode } from "react";
 import {
   Alert,
   Pressable,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -19,35 +20,60 @@ import { useLibrary } from "@/hooks/use-library";
 import { useProfile } from "@/hooks/use-profile";
 import { libraryCounts } from "@/lib/profile";
 
-function confirmSignOut(signOut: () => Promise<void>) {
-  Alert.alert("Sign out?", undefined, [
+function showActionError(title: string, error: unknown) {
+  const message = error instanceof Error ? error.message : "Please try again.";
+  if (Platform.OS === "web") {
+    window.alert(`${title}\n\n${message}`);
+  } else {
+    Alert.alert(title, message);
+  }
+}
+
+function confirmAction(
+  title: string,
+  message: string | undefined,
+  confirmLabel: string,
+  onConfirm: () => Promise<void>,
+  errorTitle: string,
+  destructive = false,
+) {
+  const confirm = () =>
+    void onConfirm().catch((error) => showActionError(errorTitle, error));
+
+  if (Platform.OS === "web") {
+    const prompt = [title, message].filter(Boolean).join("\n\n");
+    if (window.confirm(prompt)) confirm();
+    return;
+  }
+
+  Alert.alert(title, message, [
     { text: "Cancel", style: "cancel" },
     {
-      text: "Sign out",
-      onPress: () => void signOut().catch((error) =>
-        Alert.alert("Couldn't sign out", error instanceof Error ? error.message : "Please try again."),
-      ),
+      text: confirmLabel,
+      style: destructive ? "destructive" : undefined,
+      onPress: confirm,
     },
   ]);
 }
 
+function confirmSignOut(signOut: () => Promise<void>) {
+  confirmAction(
+    "Sign out?",
+    undefined,
+    "Sign out",
+    signOut,
+    "Couldn't sign out",
+  );
+}
+
 function confirmDeleteAccount(deleteAccount: () => Promise<void>) {
-  Alert.alert(
+  confirmAction(
     "Delete your account?",
     'This deletes your profile, books, and photo. Active requests are cancelled; request and message history stays, shown as "Deleted user". This can\'t be undone.',
-    [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Delete",
-        style: "destructive",
-        onPress: () => void deleteAccount().catch((error) =>
-          Alert.alert(
-            "Couldn't delete your account",
-            error instanceof Error ? error.message : "Please try again.",
-          ),
-        ),
-      },
-    ],
+    "Delete",
+    deleteAccount,
+    "Couldn't delete your account",
+    true,
   );
 }
 

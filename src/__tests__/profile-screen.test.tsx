@@ -5,7 +5,7 @@ import {
   waitFor,
 } from "@testing-library/react-native";
 import { router } from "expo-router";
-import { Alert } from "react-native";
+import { Alert, Platform } from "react-native";
 
 import ProfileScreen from "@/app/(tabs)/profile";
 import { FriendsProvider } from "@/hooks/use-friends";
@@ -54,6 +54,28 @@ const profile: Profile = {
 };
 const blocked: BlockedUser[] = [{ id: "b1", displayName: "Chloe" }];
 const noFriends: FriendsState = { friends: [], incoming: [], outgoing: [] };
+let restoreWebDialogs: (() => void) | null = null;
+
+function useWebDialogs() {
+  const originalWindow = Object.getOwnPropertyDescriptor(globalThis, "window");
+  const confirm = jest.fn();
+  const alert = jest.fn();
+  Object.defineProperty(globalThis, "window", {
+    configurable: true,
+    value: { confirm, alert },
+  });
+  const platform = jest.replaceProperty(Platform, "OS", "web");
+  restoreWebDialogs = () => {
+    platform.restore();
+    if (originalWindow) {
+      Object.defineProperty(globalThis, "window", originalWindow);
+    } else {
+      Reflect.deleteProperty(globalThis, "window");
+    }
+    restoreWebDialogs = null;
+  };
+  return { confirm, alert };
+}
 
 async function renderProfile(overrides: Partial<Profile> = {}) {
   await render(
@@ -85,6 +107,10 @@ beforeEach(() => {
   mockSignOut.mockResolvedValue(undefined);
   mockDeleteAccount.mockResolvedValue(undefined);
   jest.spyOn(Alert, "alert").mockImplementation(() => {});
+});
+
+afterEach(() => {
+  restoreWebDialogs?.();
 });
 
 describe("ProfileScreen", () => {
@@ -150,6 +176,42 @@ describe("ProfileScreen", () => {
     ]);
     lastAlertButtons()[1].onPress?.();
     await waitFor(() => expect(mockSignOut).toHaveBeenCalled());
+  });
+
+  it("uses browser confirmations for sign out and account deletion", async () => {
+    const dialogs = useWebDialogs();
+    await renderProfile();
+
+    dialogs.confirm.mockReturnValueOnce(false);
+    await fireEvent.press(screen.getByRole("button", { name: "Sign out" }));
+    expect(dialogs.confirm).toHaveBeenCalledWith("Sign out?");
+    expect(mockSignOut).not.toHaveBeenCalled();
+
+    dialogs.confirm.mockReturnValueOnce(true);
+    await fireEvent.press(screen.getByRole("button", { name: "Sign out" }));
+    await waitFor(() => expect(mockSignOut).toHaveBeenCalled());
+
+    dialogs.confirm.mockReturnValueOnce(true);
+    await fireEvent.press(screen.getByRole("button", { name: "Delete account" }));
+    expect(dialogs.confirm).toHaveBeenLastCalledWith(
+      expect.stringContaining("This deletes your profile, books, and photo."),
+    );
+    await waitFor(() => expect(mockDeleteAccount).toHaveBeenCalled());
+  });
+
+  it("shows account-deletion errors in the browser", async () => {
+    const dialogs = useWebDialogs();
+    mockDeleteAccount.mockRejectedValue(new Error("network unavailable"));
+    await renderProfile();
+
+    dialogs.confirm.mockReturnValueOnce(true);
+    await fireEvent.press(screen.getByRole("button", { name: "Delete account" }));
+
+    await waitFor(() =>
+      expect(dialogs.alert).toHaveBeenCalledWith(
+        "Couldn't delete your account\n\nnetwork unavailable",
+      ),
+    );
   });
 
   it("explains what deleting the account removes", async () => {
